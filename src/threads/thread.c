@@ -23,6 +23,7 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
+static struct list sleep_list;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -87,6 +88,7 @@ thread_init (void)
 
   lock_init (&tid_lock);
   list_init (&ready_list);
+	list_init(&sleep_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -115,7 +117,7 @@ thread_start (void)
 /* Called by the timer interrupt handler at each timer tick.
    Thus, this function runs in an external interrupt context. */
 void
-thread_tick (void) 
+thread_tick (int64_t ticks) 
 {
   struct thread *t = thread_current ();
 
@@ -129,9 +131,12 @@ thread_tick (void)
   else
     kernel_ticks++;
 
+	check_sleep_list(ticks);
+
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
+	
 }
 
 /* Prints thread statistics. */
@@ -230,6 +235,46 @@ thread_unblock (struct thread *t)
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
+
+/* project0 */
+
+void sleep_list_push_back(int64_t wake_up_time)
+{
+
+  enum intr_level old_level;
+  old_level = intr_disable ();
+
+	struct thread *t = thread_current();
+	t->wake_up_time = wake_up_time; 
+  list_push_back (&sleep_list, &t->elem);
+	thread_block ();
+
+  intr_set_level (old_level);
+}
+
+void check_sleep_list(int64_t ticks)
+{
+	//printf("check_sleep_list : [%lld]\n", ticks);
+  enum intr_level old_level;
+	struct list_elem *e;
+
+  old_level = intr_disable ();
+
+	for(e = list_begin(&sleep_list); e != list_end(&sleep_list); )
+	{
+		struct thread *t = list_entry(e, struct thread, elem); 
+		if(t->wake_up_time <= ticks) {
+			e = list_remove(e);	
+			thread_unblock(t);
+		}
+		else {
+			e = list_next(e);
+		}
+	}
+  intr_set_level (old_level);
+}
+
+
 
 /* Returns the name of the running thread. */
 const char *

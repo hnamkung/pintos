@@ -88,7 +88,7 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
-
+		
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -99,6 +99,9 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+
+		/* project 0 */
+		int64_t wake_up_time;
   };
 
 /* If false (default), use round-robin scheduler.
@@ -109,7 +112,7 @@ extern bool thread_mlfqs;
 void thread_init (void);
 void thread_start (void);
 
-void thread_tick (void);
+void thread_tick (int64_t ticks);
 void thread_print_stats (void);
 
 typedef void thread_func (void *aux);
@@ -117,6 +120,8 @@ tid_t thread_create (const char *name, int priority, thread_func *, void *);
 
 void thread_block (void);
 void thread_unblock (struct thread *);
+void sleep_list_push_back(int64_t wake_up_time);
+void check_sleep_list(int64_t ticks);
 
 struct thread *thread_current (void);
 tid_t thread_tid (void);
@@ -132,5 +137,6 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+
 
 #endif /* threads/thread.h */
