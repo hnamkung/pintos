@@ -200,6 +200,8 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
+	try_thread_preempt();
+
   return tid;
 }
 
@@ -235,9 +237,35 @@ thread_unblock (struct thread *t)
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
+/* project1 priority */
+void try_thread_preempt()
+{
+	if(!list_empty(&ready_list)) {
+		struct thread *cur = thread_current ();
+		struct list_elem *e;
+		struct list_elem *maxE;
+		struct thread *maxThread;
+		int maxPrior=-1;
+		enum intr_level old_level;
+		old_level = intr_disable();
+    for (e = list_begin (&ready_list); e != list_end (&ready_list); e = list_next (e))
+      {
+      	struct thread *t = list_entry (e, struct thread, elem);
+				if(maxPrior < t->priority) {
+					maxPrior = t->priority;
+					maxThread = t;
+					maxE = e;
+				}
+      }
+		intr_set_level (old_level);
+		
+		if(maxThread != cur) {
+			thread_yield();	
+		}
+	}
+}
 
-/* project0 */
-
+/* project1 alarm_clock */
 void sleep_list_push_back(int64_t wake_up_time)
 {
 
@@ -257,7 +285,6 @@ void check_sleep_list(int64_t ticks)
 	//printf("check_sleep_list : [%lld]\n", ticks);
   enum intr_level old_level;
 	struct list_elem *e;
-
   old_level = intr_disable ();
 
 	for(e = list_begin(&sleep_list); e != list_end(&sleep_list); )
@@ -350,7 +377,8 @@ thread_yield (void)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+ 	thread_current()->priority = new_priority;
+	try_thread_preempt();
 }
 
 /* Returns the current thread's priority. */
@@ -503,8 +531,9 @@ next_thread_to_run (void)
     return idle_thread;
 	}
   else {
-	//	printf("size of ready_list : %d", list_size(&ready_list));
-	//	return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  	enum intr_level old_level;
+		old_level = intr_disable();
+
 		struct list_elem *e;
 		struct list_elem *maxE;
 		struct thread *maxThread;
@@ -519,6 +548,7 @@ next_thread_to_run (void)
 				}
       }
 		list_remove(maxE);
+		intr_set_level (old_level);
 		return maxThread;
 	}
 }

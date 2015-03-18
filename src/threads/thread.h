@@ -120,8 +120,12 @@ tid_t thread_create (const char *name, int priority, thread_func *, void *);
 
 void thread_block (void);
 void thread_unblock (struct thread *);
+
+/* project1 */
+void try_thread_preempt();
 void sleep_list_push_back(int64_t wake_up_time);
 void check_sleep_list(int64_t ticks);
+/* ------- */
 
 struct thread *thread_current (void);
 tid_t thread_tid (void);
