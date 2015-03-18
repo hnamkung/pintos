@@ -100,8 +100,13 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
 
-		/* project 0 */
+		/* project 1 */
 		int64_t wake_up_time;
+
+		// priority donation
+		int original_priority;	
+		struct list holding_locks_list;
+		struct lock *waiting_lock;
   };
 
 /* If false (default), use round-robin scheduler.

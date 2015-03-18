@@ -90,11 +90,13 @@ thread_init (void)
   list_init (&ready_list);
 	list_init(&sleep_list);
 
+
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -503,7 +505,12 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
+	t->original_priority = priority;
   t->magic = THREAD_MAGIC;
+	
+	// project1 holding_locks_list init
+	list_init(&t->holding_locks_list);
+
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
