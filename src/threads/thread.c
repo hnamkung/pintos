@@ -379,9 +379,30 @@ thread_yield (void)
 void
 thread_set_priority (int new_priority) 
 {
- 	thread_current()->original_priority = new_priority;
-	if(thread_current()->priority < new_priority)
-		thread_current()->priority = new_priority;
+	enum intr_level old_level;
+ 	old_level = intr_disable ();
+
+	struct thread *cur = thread_current();
+ 	cur->original_priority = new_priority;
+
+	struct list_elem *e;
+	struct list_elem *maxE;
+	struct thread *maxThread;
+	int maxPrior=new_priority;
+  for (e = list_begin (&cur->holding_locks_list); e != list_end (&cur->holding_locks_list);
+			e = list_next (e)) {
+     	struct lock *l = list_entry (e, struct lock, elem);
+			struct list_elem *f;
+			for(f = list_begin(&l->semaphore.waiters); f != list_end(&l->semaphore.waiters); f = list_next(f)) {
+				struct thread *t = list_entry(f, struct thread, elem);	
+				if(maxPrior < t->priority) {
+					maxPrior = t->priority;
+				}
+			}
+	}
+	cur->priority = maxPrior;
+	intr_set_level (old_level);
+
 	try_thread_preempt();
 }
 

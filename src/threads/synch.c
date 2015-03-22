@@ -287,8 +287,7 @@ lock_release (struct lock *lock)
 	struct thread *maxThread;
 	int maxPrior=cur->original_priority;
   for (e = list_begin (&cur->holding_locks_list); e != list_end (&cur->holding_locks_list);
-			e = list_next (e))
-	{
+			e = list_next (e)) {
      	struct lock *l = list_entry (e, struct lock, elem);
 			struct list_elem *f;
 			for(f = list_begin(&l->semaphore.waiters); f != list_end(&l->semaphore.waiters); f = list_next(f)) {
