@@ -283,8 +283,6 @@ lock_release (struct lock *lock)
   lock->holder = NULL;
 
 	struct list_elem *e;
-	struct list_elem *maxE;
-	struct thread *maxThread;
 	int maxPrior=cur->original_priority;
   for (e = list_begin (&cur->holding_locks_list); e != list_end (&cur->holding_locks_list);
 			e = list_next (e)) {

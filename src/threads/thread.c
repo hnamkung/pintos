@@ -386,8 +386,6 @@ thread_set_priority (int new_priority)
  	cur->original_priority = new_priority;
 
 	struct list_elem *e;
-	struct list_elem *maxE;
-	struct thread *maxThread;
 	int maxPrior=new_priority;
   for (e = list_begin (&cur->holding_locks_list); e != list_end (&cur->holding_locks_list);
 			e = list_next (e)) {
