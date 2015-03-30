@@ -1,5 +1,7 @@
 src/threads/build
-src/threads/bochsout.txt
-src/threads/bochsrc.txt
+bochsout.txt
+bochsrc.txt
 src/tags
 *.swp
+src/examples
+src/userprog/build
