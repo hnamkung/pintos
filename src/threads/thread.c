@@ -288,26 +288,27 @@ void check_sleep_list(int64_t ticks)
 	struct list_elem *e;
 	int yield_on_return = 0;
 
-  enum intr_level old_level;
-  old_level = intr_disable ();
+    enum intr_level old_level;
+    old_level = intr_disable ();
 
-	for(e = list_begin(&sleep_list); e != list_end(&sleep_list); )
-	{
-		struct thread *t = list_entry(e, struct thread, elem); 
-		if(t->wake_up_time <= ticks) {
-			e = list_remove(e);	
-			yield_on_return = 1;
-			thread_unblock(t);
-		}
-		else {
-			e = list_next(e);
-		}
-	}
-  intr_set_level (old_level);
+    for(e = list_begin(&sleep_list); e != list_end(&sleep_list); )
+    {
+        struct thread *t = list_entry(e, struct thread, elem); 
+        if(t->wake_up_time <= ticks) {
+            e = list_remove(e);	
+            if(t->priority > thread_current()->priority)
+                yield_on_return = 1;
+            thread_unblock(t);
+        }
+        else {
+            e = list_next(e);
+        }
+    }
+    intr_set_level (old_level);
 
-	if(yield_on_return) {
-    intr_yield_on_return ();
-	}
+    if(yield_on_return) {
+        intr_yield_on_return ();
+    }
 }
 
 
