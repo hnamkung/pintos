@@ -1,7 +1,8 @@
 src/threads/build
 bochsout.txt
 bochsrc.txt
-src/tags
+tags
+cscope.*
 *.swp
 src/examples
 src/userprog/build
