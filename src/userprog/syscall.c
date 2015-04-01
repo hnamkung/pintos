@@ -1,10 +1,12 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
 static void syscall_handler (struct intr_frame *);
+static void syscall_write(struct intr_frame *f);
 
 void
 syscall_init (void) 
@@ -15,6 +17,23 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
-  printf ("system call!\n");
-  thread_exit ();
+    int SYS_NUM = *(int *)f->esp;
+    if(SYS_NUM == SYS_WRITE) {
+         syscall_write(f);
+    }
+    else {
+        thread_exit ();
+    }
+}
+static void syscall_write(struct intr_frame *f)
+{
+    int fd = *(int *)(f->esp + 4);
+    char *buffer = *(char **)(f->esp + 8);
+    int size = *(int *)(f->esp + 12);
+    struct file *file;
+    
+    if(fd == 1) {
+        putbuf(buffer, size);
+        f->eax = size;
+    }
 }
