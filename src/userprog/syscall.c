@@ -44,7 +44,8 @@ static void syscall_write(struct intr_frame *f)
 
 static void syscall_exit(struct intr_frame *f)
 {
+    int status = *(int *)(f->esp+4);
     struct thread *t = thread_current();
-    printf("%s: exit(0)\n", t->name);
+    printf("%s: exit(%d)\n", t->name, status);
     thread_exit();
 }

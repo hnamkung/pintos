@@ -146,6 +146,7 @@ execute_thread (void *file_name_)
   char *fn_front;
   struct intr_frame if_;
   bool success;
+  struct thread *t = thread_current();
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -154,6 +155,7 @@ execute_thread (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
       
   fn_front = get_fn_front(file_name);
+  memcpy(t->name, fn_front, 20);
   success = load (fn_front, &if_.eip, &if_.esp);
   set_argument_in_stack(file_name, &if_.esp);
 
