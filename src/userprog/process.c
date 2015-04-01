@@ -19,8 +19,11 @@
 #include "threads/vaddr.h"
 #include "threads/synch.h"
 
+#define MAX_ARGS 256
+
 static thread_func execute_thread NO_RETURN;
 static struct semaphore sema;
+void set_argument_in_stack(char *file_name, void **esp_pointer);
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
 /* Starts a new thread running a user program loaded from
@@ -32,7 +35,6 @@ process_execute (const char *file_name)
 {
     char *fn_copy;
     tid_t tid;
-    struct thread *t;
 
     /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
@@ -48,11 +50,77 @@ process_execute (const char *file_name)
     
     sema_down(&sema);
 
-    ASSERT(0);
     if (tid == TID_ERROR)
         palloc_free_page (fn_copy); 
 
     return tid;
+}
+
+
+void set_argument_in_stack(char *file_name, void **esp_pointer)
+{
+    char *cp_fn, *argv_pointer_list[MAX_ARGS];
+    int i, argc, len = strlen(file_name);
+    int arglen, size;
+    void *esp = *esp_pointer;
+
+
+    cp_fn = malloc(sizeof(char)*(len+1));
+    cp_fn[len] = 0;
+
+    argc = 0;
+    for(i=0; i<len; i++) {
+        if(file_name[i] != ' ')
+            break;
+    }
+
+
+    for( ; i<len; i++) {
+        cp_fn[i] = (file_name[i] == ' ') ? 0 : file_name[i];
+        if(i == 0 || (file_name[i-1] == ' ' && file_name[i] != ' ')) {
+            argv_pointer_list[argc] = cp_fn+i;
+            argc++;
+        }
+    }
+
+    printf("esp_pointer : %p\n\n", *esp_pointer);
+    printf("esp : %p\n\n", esp);
+
+    size=0;
+    for(i=0; i<argc; i++) {
+        arglen = strlen(argv_pointer_list[i]);
+        arglen++;
+        size += arglen;
+        memcpy(esp-size, argv_pointer_list[i], arglen);
+
+        argv_pointer_list[i] = esp-size;
+        printf("%d] %s\n\n", i, argv_pointer_list[i]);
+    }
+    if(size%4 != 0)
+        size = 4*((size)/4+1);
+    esp -= size;
+
+    // Null point sentinel
+    esp -= 4;
+    *(void **)esp = 0;
+   
+    // set pointer of argv[i]
+    for(i=argc-1; i>=0; i--) {
+        esp -= 4;
+        *(void **)esp = argv_pointer_list[i];
+    }
+
+    esp -= 4;
+    *(void **)esp = esp+4;
+   
+    esp -= 4;
+    *(int *)esp = argc;
+    
+    esp -= 4;
+    *(void **)esp = 0;
+
+    *esp_pointer = esp;
+    ASSERT(0);
 }
 
 /* A thread function that loads a user process and starts it
@@ -60,7 +128,7 @@ process_execute (const char *file_name)
 static void
 execute_thread (void *file_name_)
 {
-  char *file_name = (char*)file_name_;
+  char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
 
@@ -71,6 +139,8 @@ execute_thread (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
 
+
+//  set_argument_in_stack(file_name, &if_.esp);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -228,6 +298,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   off_t file_ofs;
   bool success = false;
   int i;
+
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
