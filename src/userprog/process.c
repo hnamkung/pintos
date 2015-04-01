@@ -20,11 +20,13 @@
 #include "threads/synch.h"
 
 #define MAX_ARGS 256
+#define MAX_FN_FRONT 100
 
 static thread_func execute_thread NO_RETURN;
 static struct semaphore sema;
 void set_argument_in_stack(char *file_name, void **esp_pointer);
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
+char* get_fn_front(char *file_name);
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -56,6 +58,23 @@ process_execute (const char *file_name)
     return tid;
 }
 
+char * get_fn_front(char *file_name)
+{
+    char * fn_front = malloc(sizeof(char)*MAX_FN_FRONT);
+    int i, cnt=0, len = strlen(file_name);
+    for(i=0; i<len; i++) {
+        if(file_name[i] != ' ')
+            break;
+    }
+    for(; i<len; i++) {
+        if(file_name[i] == ' ')
+            break;
+        fn_front[cnt] = file_name[i];
+        cnt++;
+    }
+    fn_front[cnt] = 0;
+    return fn_front;
+}
 
 void set_argument_in_stack(char *file_name, void **esp_pointer)
 {
@@ -83,9 +102,6 @@ void set_argument_in_stack(char *file_name, void **esp_pointer)
         }
     }
 
-    printf("esp_pointer : %p\n\n", *esp_pointer);
-    printf("esp : %p\n\n", esp);
-
     size=0;
     for(i=0; i<argc; i++) {
         arglen = strlen(argv_pointer_list[i]);
@@ -94,7 +110,6 @@ void set_argument_in_stack(char *file_name, void **esp_pointer)
         memcpy(esp-size, argv_pointer_list[i], arglen);
 
         argv_pointer_list[i] = esp-size;
-        printf("%d] %s\n\n", i, argv_pointer_list[i]);
     }
     if(size%4 != 0)
         size = 4*((size)/4+1);
@@ -120,7 +135,6 @@ void set_argument_in_stack(char *file_name, void **esp_pointer)
     *(void **)esp = 0;
 
     *esp_pointer = esp;
-    ASSERT(0);
 }
 
 /* A thread function that loads a user process and starts it
@@ -129,6 +143,7 @@ static void
 execute_thread (void *file_name_)
 {
   char *file_name = file_name_;
+  char *fn_front;
   struct intr_frame if_;
   bool success;
 
@@ -137,10 +152,11 @@ execute_thread (void *file_name_)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  success = load (file_name, &if_.eip, &if_.esp);
+      
+  fn_front = get_fn_front(file_name);
+  success = load (fn_front, &if_.eip, &if_.esp);
+  set_argument_in_stack(file_name, &if_.esp);
 
-
-//  set_argument_in_stack(file_name, &if_.esp);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
