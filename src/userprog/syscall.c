@@ -7,6 +7,7 @@
 
 static void syscall_handler (struct intr_frame *);
 static void syscall_write(struct intr_frame *f);
+static void syscall_exit(struct intr_frame *f);
 
 void
 syscall_init (void) 
@@ -20,6 +21,9 @@ syscall_handler (struct intr_frame *f UNUSED)
     int SYS_NUM = *(int *)f->esp;
     if(SYS_NUM == SYS_WRITE) {
          syscall_write(f);
+    }
+    else if(SYS_NUM == SYS_EXIT) {
+        syscall_exit(f);
     }
     else {
         thread_exit ();
@@ -36,4 +40,11 @@ static void syscall_write(struct intr_frame *f)
         putbuf(buffer, size);
         f->eax = size;
     }
+}
+
+static void syscall_exit(struct intr_frame *f)
+{
+    struct thread *t = thread_current();
+    printf("%s: exit(0)\n", t->name);
+    thread_exit();
 }
