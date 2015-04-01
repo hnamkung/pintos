@@ -17,8 +17,10 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/synch.h"
 
 static thread_func execute_thread NO_RETURN;
+static struct semaphore sema;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
 /* Starts a new thread running a user program loaded from
@@ -28,21 +30,29 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *file_name) 
 {
-  char *fn_copy;
-  tid_t tid;
+    char *fn_copy;
+    tid_t tid;
+    struct thread *t;
 
-  /* Make a copy of FILE_NAME.
+    /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
-  fn_copy = palloc_get_page (0);
-  if (fn_copy == NULL)
-    return TID_ERROR;
-  strlcpy (fn_copy, file_name, PGSIZE);
+    fn_copy = palloc_get_page (0);
+    if (fn_copy == NULL)
+        return TID_ERROR;
 
-  /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
-  if (tid == TID_ERROR)
-    palloc_free_page (fn_copy); 
-  return tid;
+    sema_init(&sema, 0);
+
+    strlcpy (fn_copy, file_name, PGSIZE);
+    /* Create a new thread to execute FILE_NAME. */
+    tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
+    
+    sema_down(&sema);
+
+    ASSERT(0);
+    if (tid == TID_ERROR)
+        palloc_free_page (fn_copy); 
+
+    return tid;
 }
 
 /* A thread function that loads a user process and starts it
@@ -50,7 +60,7 @@ process_execute (const char *file_name)
 static void
 execute_thread (void *file_name_)
 {
-  char *file_name = file_name_;
+  char *file_name = (char*)file_name_;
   struct intr_frame if_;
   bool success;
 
@@ -60,6 +70,7 @@ execute_thread (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
+
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -72,6 +83,10 @@ execute_thread (void *file_name_)
      arguments on the stack in the form of a `struct intr_frame',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
+
+
+  sema_up(&sema);
+
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
 }
@@ -227,6 +242,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
       printf ("load: %s: open failed\n", file_name);
       goto done; 
     }
+
 
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
@@ -459,6 +475,6 @@ install_page (void *upage, void *kpage, bool writable)
 
   /* Verify that there's not already a page at that virtual
      address, then map our page there. */
-  return (pagedir_get_page (t->pagedir, upage) == NULL
-          && pagedir_set_page (t->pagedir, upage, kpage, writable));
+  return (pagedir_get_page (t->pagedir, upage) == NULL && 
+          pagedir_set_page (t->pagedir, upage, kpage, writable));
 }
