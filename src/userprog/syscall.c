@@ -4,6 +4,7 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "threads/init.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -56,7 +57,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         syscall_open(f);
     }
     else if(SYS_NUM == SYS_FILESIZE) {
-        syscall_halt(f);
+        syscall_filesize(f);
     }
     else if(SYS_NUM == SYS_READ) {
         syscall_read(f);
@@ -88,6 +89,7 @@ static void syscall_exit(struct intr_frame *f)
 
 static void syscall_halt(struct intr_frame *f)
 {
+    power_off();
 }
 
 static void syscall_exec(struct intr_frame *f)
