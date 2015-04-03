@@ -3,6 +3,5 @@ bochsout.txt
 bochsrc.txt
 tags
 cscope.*
-*.swp
 src/examples
 src/userprog/build
