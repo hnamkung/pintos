@@ -102,6 +102,9 @@ static void syscall_wait(struct intr_frame *f)
 
 static void syscall_create(struct intr_frame *f)
 {
+    char *file = *(char **)(f->esp+4);
+    unsigned size = *(unsigned *)(f->esp+8);
+    f->eax = filesys_create(file, size);
 }
 
 static void syscall_remove(struct intr_frame *f)
