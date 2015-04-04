@@ -23,40 +23,9 @@
 #define MAX_FN_FRONT 100
 
 static thread_func execute_thread NO_RETURN;
-static struct semaphore sema;
 void set_argument_in_stack(char *file_name, void **esp_pointer);
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 char* get_fn_front(char *file_name);
-
-/* Starts a new thread running a user program loaded from
-   FILENAME.  The new thread may be scheduled (and may even exit)
-   before process_execute() returns.  Returns the new process's
-   thread id, or TID_ERROR if the thread cannot be created. */
-tid_t
-process_execute (const char *file_name) 
-{
-    char *fn_copy;
-    tid_t tid;
-
-    /* Make a copy of FILE_NAME.
-     Otherwise there's a race between the caller and load(). */
-    fn_copy = palloc_get_page (0);
-    if (fn_copy == NULL)
-        return TID_ERROR;
-
-    sema_init(&sema, 0);
-
-    strlcpy (fn_copy, file_name, PGSIZE);
-    /* Create a new thread to execute FILE_NAME. */
-    tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
-    
-    sema_down(&sema);
-
-    if (tid == TID_ERROR)
-        palloc_free_page (fn_copy); 
-
-    return tid;
-}
 
 char * get_fn_front(char *file_name)
 {
@@ -137,12 +106,48 @@ void set_argument_in_stack(char *file_name, void **esp_pointer)
     *esp_pointer = esp;
 }
 
+
+/* Starts a new thread running a user program loaded from
+   FILENAME.  The new thread may be scheduled (and may even exit)
+   before process_execute() returns.  Returns the new process's
+   thread id, or TID_ERROR if the thread cannot be created. */
+tid_t
+process_execute (const char *file_name) 
+{
+    struct semaphore sema;
+    char *fn_copy;
+    tid_t tid;
+
+    /* Make a copy of FILE_NAME.
+     Otherwise there's a race between the caller and load(). */
+    fn_copy = palloc_get_page (0);
+    if (fn_copy == NULL)
+        return TID_ERROR;
+
+    sema_init(&sema, 0);
+
+    *(void **)fn_copy = &sema;
+
+    strlcpy (fn_copy+4, file_name, PGSIZE-4);
+    /* Create a new thread to execute FILE_NAME. */
+
+    tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
+    
+    sema_down(&sema);
+
+    if (tid == TID_ERROR)
+        palloc_free_page (fn_copy); 
+
+    return tid;
+}
+
 /* A thread function that loads a user process and starts it
    running. */
 static void
 execute_thread (void *file_name_)
 {
-  char *file_name = file_name_;
+  struct semaphore *sema = *(void **)file_name_;
+  char *file_name = file_name_+4;
   char *fn_front;
   struct intr_frame if_;
   bool success;
@@ -161,7 +166,7 @@ execute_thread (void *file_name_)
 
 
   /* If load failed, quit. */
-  palloc_free_page (file_name);
+  palloc_free_page (file_name_);
   if (!success) 
     thread_exit ();
 
@@ -173,7 +178,7 @@ execute_thread (void *file_name_)
      and jump to it. */
 
 
-  sema_up(&sema);
+  sema_up(sema);
 
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();

@@ -108,10 +108,13 @@ static void syscall_halt(struct intr_frame *f)
 
 static void syscall_exec(struct intr_frame *f)
 {
+    char * cmd_line = *(char *)(f->esp+4);
+    f->eax = process_execute(cmd_line);
 }
 
 static void syscall_wait(struct intr_frame *f)
 {
+
 }
 
 static void syscall_create(struct intr_frame *f)
@@ -158,20 +161,38 @@ static void syscall_filesize(struct intr_frame *f)
 
 static void syscall_read(struct intr_frame *f)
 {
-     
+    int fd = *(int *)(f->esp+4);
+    void *buffer = *(void **)(f->esp+8);
+    unsigned size = *(unsigned *)(f->esp+12);
+    
+    if(fd == 0) {
+        //f->eax = input_getc(); 
+    }
+    else {
+        struct file *file = search_file(fd); 
+        if(file == NULL) {
+            f->eax = -1;
+            return;
+        }
+        f->eax = file_read(file, buffer, size); 
+    }
 }
 
 static void syscall_write(struct intr_frame *f)
 {
     int fd = *(int *)(f->esp + 4);
-    char *buffer = *(char **)(f->esp + 8);
-    int size = *(int *)(f->esp + 12);
-    struct file *file;
+    void *buffer = *(void **)(f->esp + 8);
+    unsigned size = *(unsigned *)(f->esp + 12);
     
     if(fd == 1) {
         putbuf(buffer, size);
         f->eax = size;
+        return;
     }
+    struct file *file = search_file(fd);
+    if(file == NULL)
+        return;
+    f->eax = file_write(file, buffer, size);
 }
 
 
