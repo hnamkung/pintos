@@ -271,6 +271,9 @@ process_exit (void)
       sema_up(&cur->parent->wait_sema);
   }
 
+  file_allow_write(cur->exec_file);
+  file_close(cur->exec_file);
+
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -488,6 +491,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
  done:
   if(success) {
+      t->exec_file = file;
       file_deny_write(file);
   } else {
       file_close (file);

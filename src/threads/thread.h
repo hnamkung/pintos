@@ -103,6 +103,7 @@ struct thread
     
     /* project 2 */
 
+
     // file descriptor
     struct file_fd fd_table[MAX_FD];
 
@@ -118,6 +119,9 @@ struct thread
     struct thread *parent;  
 
     int exit_status;
+
+    // executable file
+    struct file * exec_file;
 
     /* project 2 */
 

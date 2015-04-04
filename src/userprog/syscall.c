@@ -203,10 +203,22 @@ static void syscall_write(struct intr_frame *f)
 
 static void syscall_seek(struct intr_frame *f)
 {
+    int fd = *(int *)(f->esp+4);
+    unsigned position = *(unsigned *)(f->esp+8);
+    struct file *file = search_file(fd); 
+    if(file == NULL)
+        return;
+    file_seek(file, position);
+    return;
 }
 
 static void syscall_tell(struct intr_frame *f)
 {
+    int fd = *(int *)(f->esp+4);
+    struct file *file = search_file(fd); 
+    if(file == NULL)
+        return;
+    f->eax = file_tell(file);
 }
 
 static void syscall_close(struct intr_frame *f)
