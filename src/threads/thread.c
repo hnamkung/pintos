@@ -433,10 +433,24 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+  
+  // fd table init
   int i;
   for(i=0; i<MAX_FD; i++) {
     t->fd_table[i].fd = -1;
   }
+  
+  // list init
+  list_init(&t->child_list);
+  list_init(&t->zombie_list);
+
+  // wait_sema init
+  sema_init(&t->wait_sema, 1);
+  // exit_sema init
+  sema_init(&t->exit_sema, 0);
+
+  t->exit_status = -1;
+  t->parent = NULL;
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

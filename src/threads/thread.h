@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "userprog/syscall.h"
+#include "threads/synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -100,7 +101,26 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
 #endif
     
+    /* project 2 */
+
+    // file descriptor
     struct file_fd fd_table[MAX_FD];
+
+    // child process management
+    struct list child_list;
+    struct list_elem child_elem;
+    struct list zombie_list;
+
+
+    // for wait syscall
+    struct semaphore wait_sema;
+    struct semaphore exit_sema;
+    struct thread *parent;  
+
+    int exit_status;
+
+    /* project 2 */
+
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };

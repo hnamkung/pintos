@@ -115,7 +115,8 @@ tid_t
 process_execute (const char *file_name) 
 {
     struct semaphore sema;
-    char *fn_copy;
+    void *fn_copy;
+    struct thread *t = thread_current();
     tid_t tid;
 
     /* Make a copy of FILE_NAME.
@@ -127,13 +128,13 @@ process_execute (const char *file_name)
     sema_init(&sema, 0);
 
     *(void **)fn_copy = &sema;
+    *(void **)(fn_copy+4) = t;
+    strlcpy (fn_copy+8, file_name, PGSIZE-8);
 
-    strlcpy (fn_copy+4, file_name, PGSIZE-4);
     /* Create a new thread to execute FILE_NAME. */
-
     tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
-    
     sema_down(&sema);
+
 
     if (tid == TID_ERROR)
         palloc_free_page (fn_copy); 
@@ -144,14 +145,19 @@ process_execute (const char *file_name)
 /* A thread function that loads a user process and starts it
    running. */
 static void
-execute_thread (void *file_name_)
+execute_thread (void *fn_copy)
 {
-  struct semaphore *sema = *(void **)file_name_;
-  char *file_name = file_name_+4;
-  char *fn_front;
   struct intr_frame if_;
   bool success;
+  
+  struct semaphore *sema = *(void **)fn_copy;
+  struct thread *parent = *(void **)(fn_copy+4);
+  char *file_name = fn_copy+8;
+  char *fn_front;
   struct thread *t = thread_current();
+
+  t->parent = parent;
+  list_push_back(&parent->child_list, &t->child_elem);
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -166,7 +172,7 @@ execute_thread (void *file_name_)
 
 
   /* If load failed, quit. */
-  palloc_free_page (file_name_);
+  palloc_free_page (fn_copy);
   if (!success) 
     thread_exit ();
 
@@ -196,9 +202,37 @@ execute_thread (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-    
-  return -1;
+    struct thread *t = thread_current();
+    struct thread *wait_t = NULL;
+    struct list_elem *e;
+    struct list_elem *wait_e;
+    struct list *child_list = &t->child_list;
+    struct list *zombie_list = &t->zombie_list; 
+
+    sema_down(&t->wait_sema);
+    for(e = list_begin(child_list); e != list_end(child_list); e = list_next(e)) {
+        struct thread *thread = list_entry(e, struct thread, child_elem);
+        if(child_tid == thread->tid) {
+            wait_t = thread;
+            break;
+        }
+    }
+    if(wait_t != NULL)
+        sema_down(&wait_t->exit_sema);
+    sema_up(&t->wait_sema);
+
+    for(e = list_begin(zombie_list); e != list_end(zombie_list); e = list_next(e)) {
+        struct zombie *z = list_entry(e, struct zombie, elem);
+        if(child_tid == z->tid) {
+            int exit_status = z->exit_status;
+            list_remove(e);
+            free(z);
+            return exit_status;
+        }
+    }
+    return -1;
 }
+
 
 /* Free the current process's resources. */
 void
@@ -206,9 +240,35 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+  struct list *child_list = &cur->child_list;
+  struct list_elem *e;
+
+  struct zombie *z = malloc(sizeof(struct zombie));
+  z->tid = cur->tid;
+  z->exit_status = cur->exit_status;
+  if(cur->parent != NULL) {
+      list_push_back(&cur->parent->zombie_list, &z->elem);
+  }
+
+  sema_up(&cur->wait_sema);
+
+  sema_down(&cur->wait_sema);
+  for(e = list_begin(child_list); e != list_end(child_list); e = list_next(e)) {
+      struct thread *thread = list_entry(e, struct thread, child_elem);
+      thread->parent = NULL;
+  }
+  sema_up(&cur->exit_sema);
+
+  if(cur->parent != NULL) {
+      sema_down(&cur->parent->wait_sema);
+      list_remove(&cur->child_elem);
+      sema_up(&cur->parent->wait_sema);
+  }
+
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
+    
   pd = cur->pagedir;
   if (pd != NULL) 
     {

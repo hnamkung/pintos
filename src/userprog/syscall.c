@@ -92,12 +92,13 @@ syscall_handler (struct intr_frame *f UNUSED)
         thread_exit ();
     }
 }
-
+///////////////// exit
 static void syscall_exit(struct intr_frame *f)
 {
     int status = *(int *)(f->esp+4);
     struct thread *t = thread_current();
     printf("%s: exit(%d)\n", t->name, status);
+    t->exit_status = status;
     thread_exit();
 }
 
@@ -106,15 +107,19 @@ static void syscall_halt(struct intr_frame *f)
     power_off();
 }
 
+///////////////// exec
 static void syscall_exec(struct intr_frame *f)
 {
-    char * cmd_line = *(char *)(f->esp+4);
+    char* cmd_line = *(void **)(f->esp+4);
     f->eax = process_execute(cmd_line);
 }
 
+
+////////////////// wait
 static void syscall_wait(struct intr_frame *f)
 {
-
+    int tid = *(int *)(f->esp+4);
+    f->eax = process_wait(tid);
 }
 
 static void syscall_create(struct intr_frame *f)
