@@ -221,6 +221,7 @@ process_wait (tid_t child_tid UNUSED)
         sema_down(&wait_t->exit_sema);
     sema_up(&t->wait_sema);
 
+
     for(e = list_begin(zombie_list); e != list_end(zombie_list); e = list_next(e)) {
         struct zombie *z = list_entry(e, struct zombie, elem);
         if(child_tid == z->tid) {
@@ -250,14 +251,19 @@ process_exit (void)
       list_push_back(&cur->parent->zombie_list, &z->elem);
   }
 
-  sema_up(&cur->wait_sema);
 
+  sema_up(&cur->exit_sema);
+
+  /*
   sema_down(&cur->wait_sema);
+  printf("1]]]] remove child list from thread[%p]\n\n", cur);
   for(e = list_begin(child_list); e != list_end(child_list); e = list_next(e)) {
       struct thread *thread = list_entry(e, struct thread, child_elem);
+      printf("2]]]] child[%p]->parent = NULL\n\n", thread);
       thread->parent = NULL;
   }
-  sema_up(&cur->exit_sema);
+  sema_up(&cur->wait_sema);
+*/
 
   if(cur->parent != NULL) {
       sema_down(&cur->parent->wait_sema);
