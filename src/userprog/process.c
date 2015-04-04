@@ -160,7 +160,7 @@ execute_thread (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
       
   fn_front = get_fn_front(file_name);
-  memcpy(t->name, fn_front, 20);
+  memcpy(t->name, fn_front, 16);
   success = load (fn_front, &if_.eip, &if_.esp);
   set_argument_in_stack(file_name, &if_.esp);
 
@@ -196,6 +196,7 @@ execute_thread (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+    
   return -1;
 }
 
