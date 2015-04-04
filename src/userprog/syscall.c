@@ -9,6 +9,8 @@
 
 static void syscall_handler (struct intr_frame *);
 
+struct file* search_file(int fd);
+
 static void syscall_halt(struct intr_frame *f);
 static void syscall_exit(struct intr_frame *f);
 static void syscall_exec(struct intr_frame *f);
@@ -27,6 +29,17 @@ void
 syscall_init (void) 
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+}
+
+struct file* search_file(int fd)
+{
+    if(fd < 2 || fd > MAX_FD)
+        return NULL;
+    struct thread *t = thread_current();
+    if(t->fd_table[fd].fd != -1) {
+        return t->fd_table[fd].file;
+    }
+    return NULL;
 }
 
 static void
@@ -135,11 +148,17 @@ static void syscall_open(struct intr_frame *f)
 }
 static void syscall_filesize(struct intr_frame *f)
 {
+    int fd = *(int *)(f->esp+4);
+    struct file *file = search_file(fd);
+    if(file == NULL) {
+        return;
+    }
+    f->eax = file_length(file);
 }
 
 static void syscall_read(struct intr_frame *f)
 {
-    
+     
 }
 
 static void syscall_write(struct intr_frame *f)
