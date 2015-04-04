@@ -5,6 +5,8 @@
 #include <list.h>
 #include <stdint.h>
 
+#include "userprog/syscall.h"
+
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -18,6 +20,7 @@ enum thread_status
    You can redefine this to whatever type you like. */
 typedef int tid_t;
 #define TID_ERROR ((tid_t) -1)          /* Error value for tid_t. */
+#define MAX_FD 200
 
 /* Thread priorities. */
 #define PRI_MIN 0                       /* Lowest priority. */
@@ -96,7 +99,8 @@ struct thread
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
 #endif
-
+    
+    struct file_fd fd_table[MAX_FD];
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };

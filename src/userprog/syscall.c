@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <syscall-nr.h>
+#include "filesys/filesys.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/init.h"
@@ -102,25 +103,43 @@ static void syscall_wait(struct intr_frame *f)
 
 static void syscall_create(struct intr_frame *f)
 {
-    char *file = *(char **)(f->esp+4);
+    char *name = *(char **)(f->esp+4);
     unsigned size = *(unsigned *)(f->esp+8);
-    f->eax = filesys_create(file, size);
+    f->eax = filesys_create(name, size);
 }
 
 static void syscall_remove(struct intr_frame *f)
 {
+    char *name = *(char **)(f->esp+4);
+    f->eax = filesys_remove(name);
 }
 
 static void syscall_open(struct intr_frame *f)
 {
+    char *name = *(char **)(f->esp+4);
+    struct file *file = filesys_open(name);
+    struct thread *t = thread_current();
+    if(file == NULL) {
+        f->eax = -1;
+        return;
+    }
+    int fd;
+    for(fd=2; fd<MAX_FD; fd++) {
+        if(t->fd_table[fd].fd == -1) {
+            t->fd_table[fd].file = file;
+            t->fd_table[fd].fd = fd;
+            break; 
+        }
+    }
+    f->eax = fd;
 }
-
 static void syscall_filesize(struct intr_frame *f)
 {
 }
 
 static void syscall_read(struct intr_frame *f)
 {
+    
 }
 
 static void syscall_write(struct intr_frame *f)
@@ -147,5 +166,8 @@ static void syscall_tell(struct intr_frame *f)
 
 static void syscall_close(struct intr_frame *f)
 {
+    int fd = *(int *)(f->esp+4);
+    struct thread *t = thread_current();
+    t->fd_table[fd].fd = -1;
 }
 
