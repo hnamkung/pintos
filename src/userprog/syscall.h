@@ -2,6 +2,7 @@
 #define USERPROG_SYSCALL_H
 
 void syscall_init (void);
+void syscall_exit(struct intr_frame *f);
 
 struct file_fd
 {

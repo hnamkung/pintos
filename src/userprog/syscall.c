@@ -18,7 +18,6 @@ void check_valid_addr(struct intr_frame *f, void *addr);
 static void syscall_handler (struct intr_frame *);
 
 static void syscall_halt(struct intr_frame *f);
-static void syscall_exit(struct intr_frame *f);
 static void syscall_exec(struct intr_frame *f);
 static void syscall_wait(struct intr_frame *f);
 static void syscall_create(struct intr_frame *f);
@@ -70,7 +69,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     } 
 
     int SYS_NUM = *(int *)f->esp;
-    
+
     if(SYS_NUM == SYS_WRITE) {
          syscall_write(f);
     }
@@ -118,7 +117,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     }
 }
 ///////////////// exit
-static void syscall_exit(struct intr_frame *f)
+void syscall_exit(struct intr_frame *f)
 {
     int status = *(int *)(f->esp+4);
     struct thread *t = thread_current();
@@ -230,7 +229,6 @@ static void syscall_write(struct intr_frame *f)
     int fd = *(int *)(f->esp + 4);
     void *buffer = *(void **)(f->esp + 8);
     unsigned size = *(unsigned *)(f->esp + 12);
-
     check_valid_addr(f, buffer);
     
     if(fd == 1) {
