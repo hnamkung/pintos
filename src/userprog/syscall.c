@@ -1,15 +1,21 @@
-#include "userprog/syscall.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <syscall-nr.h>
 #include "filesys/filesys.h"
+#include "filesys/file.h"
+#include "userprog/syscall.h"
+#include "userprog/process.h"
+#include "userprog/pagedir.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/init.h"
-
-static void syscall_handler (struct intr_frame *);
+#include "threads/vaddr.h"
 
 struct file* search_file(int fd);
+
+void check_valid_addr(struct intr_frame *f, void *addr);
+
+static void syscall_handler (struct intr_frame *);
 
 static void syscall_halt(struct intr_frame *f);
 static void syscall_exit(struct intr_frame *f);
@@ -41,6 +47,16 @@ struct file* search_file(int fd)
     }
     return NULL;
 }
+
+void check_valid_addr(struct intr_frame *f, void *addr)
+{
+    struct thread *t = thread_current();
+    if(is_kernel_vaddr(addr) || pagedir_get_page(t->pagedir, addr) == NULL) {
+        *(int *)(f->esp+4) = -1;
+        syscall_exit(f);
+    }
+}
+
 
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
@@ -111,6 +127,9 @@ static void syscall_halt(struct intr_frame *f)
 static void syscall_exec(struct intr_frame *f)
 {
     char* cmd_line = *(void **)(f->esp+4);
+
+    check_valid_addr(f, cmd_line);
+
     f->eax = process_execute(cmd_line);
 }
 
@@ -126,6 +145,9 @@ static void syscall_create(struct intr_frame *f)
 {
     char *name = *(char **)(f->esp+4);
     unsigned size = *(unsigned *)(f->esp+8);
+
+    check_valid_addr(f, name);
+
     f->eax = filesys_create(name, size);
 }
 
@@ -138,8 +160,13 @@ static void syscall_remove(struct intr_frame *f)
 static void syscall_open(struct intr_frame *f)
 {
     char *name = *(char **)(f->esp+4);
-    struct file *file = filesys_open(name);
+    struct file *file;
     struct thread *t = thread_current();
+
+    check_valid_addr(f, name);
+    
+    file = filesys_open(name);
+
     if(file == NULL) {
         f->eax = -1;
         return;
@@ -170,6 +197,8 @@ static void syscall_read(struct intr_frame *f)
     void *buffer = *(void **)(f->esp+8);
     unsigned size = *(unsigned *)(f->esp+12);
     
+    check_valid_addr(f, buffer);
+
     if(fd == 0) {
         //f->eax = input_getc(); 
     }
@@ -188,6 +217,8 @@ static void syscall_write(struct intr_frame *f)
     int fd = *(int *)(f->esp + 4);
     void *buffer = *(void **)(f->esp + 8);
     unsigned size = *(unsigned *)(f->esp + 12);
+
+    check_valid_addr(f, buffer);
     
     if(fd == 1) {
         putbuf(buffer, size);
@@ -224,6 +255,9 @@ static void syscall_tell(struct intr_frame *f)
 static void syscall_close(struct intr_frame *f)
 {
     int fd = *(int *)(f->esp+4);
+    struct file *file = search_file(fd); 
+    if(file == NULL)
+        return;
     struct thread *t = thread_current();
     t->fd_table[fd].fd = -1;
 }

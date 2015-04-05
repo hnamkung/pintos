@@ -252,6 +252,11 @@ process_exit (void)
   }
 
 
+  /* subtle timing issue */
+  file_allow_write(cur->exec_file);
+  file_close(cur->exec_file);
+  /* */
+
   sema_up(&cur->exit_sema);
 
   /*
@@ -271,8 +276,6 @@ process_exit (void)
       sema_up(&cur->parent->wait_sema);
   }
 
-  file_allow_write(cur->exec_file);
-  file_close(cur->exec_file);
 
 
   /* Destroy the current process's page directory and switch back
