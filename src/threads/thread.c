@@ -83,7 +83,6 @@ static tid_t allocate_tid (void);
 void
 thread_init (void) 
 {
-  int i;
   ASSERT (intr_get_level () == INTR_OFF);
 
   lock_init (&tid_lock);
@@ -94,7 +93,6 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
-
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.

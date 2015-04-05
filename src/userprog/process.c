@@ -18,6 +18,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "threads/synch.h"
+#include "threads/malloc.h"
 
 #define MAX_ARGS 256
 #define MAX_FN_FRONT 100
@@ -180,7 +181,6 @@ execute_thread (void *fn_copy)
   if (!success) {
     t->exit_status = -1;
     thread_exit();
-    return;
   }
   else {
     set_argument_in_stack(file_name, &if_.esp);
@@ -214,7 +214,6 @@ process_wait (tid_t child_tid UNUSED)
     struct thread *t = thread_current();
     struct thread *wait_t = NULL;
     struct list_elem *e;
-    struct list_elem *wait_e;
     struct list *child_list = &t->child_list;
     struct list *zombie_list = &t->zombie_list; 
 
@@ -250,8 +249,8 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-  struct list *child_list = &cur->child_list;
-  struct list_elem *e;
+//  struct list *child_list = &cur->child_list;
+  //struct list_elem *e;
 
   struct zombie *z = malloc(sizeof(struct zombie));
   z->tid = cur->tid;
