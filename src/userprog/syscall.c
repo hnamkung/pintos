@@ -61,6 +61,14 @@ void check_valid_addr(struct intr_frame *f, void *addr)
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
+    struct thread *t = thread_current();
+    void *addr = f->esp;
+    if(is_kernel_vaddr(addr) || pagedir_get_page(t->pagedir, addr) == NULL) {
+        printf("%s: exit(%d)\n", t->name, -1);
+        t->exit_status = -1;
+        thread_exit();
+    } 
+
     int SYS_NUM = *(int *)f->esp;
     
     if(SYS_NUM == SYS_WRITE) {
