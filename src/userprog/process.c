@@ -105,6 +105,7 @@ void set_argument_in_stack(char *file_name, void **esp_pointer)
     *(void **)esp = 0;
 
     *esp_pointer = esp;
+    free(cp_fn);
 }
 
 
@@ -124,8 +125,9 @@ process_execute (const char *file_name)
     /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
     fn_copy = palloc_get_page (0);
-    if (fn_copy == NULL)
+    if (fn_copy == NULL) {
         return TID_ERROR;
+    }
 
     sema_init(&sema, 0);
 
@@ -136,13 +138,17 @@ process_execute (const char *file_name)
 
     /* Create a new thread to execute FILE_NAME. */
     tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
+    if(tid == TID_ERROR) {
+        palloc_free_page (fn_copy); 
+        return tid;
+    }
+
     sema_down(&sema);
 
-    if(!load_success)
-        tid = -1;
-
-    if (tid == -1 || tid == TID_ERROR)
+    if(!load_success) {
         palloc_free_page (fn_copy); 
+        tid = -1;
+    }
 
     return tid;
 }
@@ -174,11 +180,13 @@ execute_thread (void *fn_copy)
   fn_front = get_fn_front(file_name);
   memcpy(t->name, fn_front, 16);
   success = load (fn_front, &if_.eip, &if_.esp);
+  free(fn_front);
 
   *load_success = success;
   sema_up(sema);
 
   if (!success) {
+    printf("%s: exit(%d)\n", t->name, -1);
     t->exit_status = -1;
     thread_exit();
   }
@@ -187,13 +195,13 @@ execute_thread (void *fn_copy)
     palloc_free_page (fn_copy);
   }
 
+
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
      arguments on the stack in the form of a `struct intr_frame',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
-
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
 }
@@ -215,30 +223,29 @@ process_wait (tid_t child_tid UNUSED)
     struct list_elem *e;
     struct list *child_list = &t->child_list;
     struct list *zombie_list = &t->zombie_list; 
+    int exit_status = -1;
 
-    sema_down(&t->wait_sema);
+    enum intr_level old_level = intr_disable();
     for(e = list_begin(child_list); e != list_end(child_list); e = list_next(e)) {
         struct thread *thread = list_entry(e, struct thread, child_elem);
         if(child_tid == thread->tid) {
             wait_t = thread;
+            sema_down(&wait_t->exit_sema);
             break;
         }
     }
-    if(wait_t != NULL)
-        sema_down(&wait_t->exit_sema);
-    sema_up(&t->wait_sema);
-
 
     for(e = list_begin(zombie_list); e != list_end(zombie_list); e = list_next(e)) {
         struct zombie *z = list_entry(e, struct zombie, elem);
         if(child_tid == z->tid) {
-            int exit_status = z->exit_status;
+            exit_status = z->exit_status;
             list_remove(e);
             free(z);
-            return exit_status;
+            break;
         }
     }
-    return -1;
+    intr_set_level(old_level);
+    return exit_status;
 }
 
 
@@ -246,59 +253,65 @@ process_wait (tid_t child_tid UNUSED)
 void
 process_exit (void)
 {
-  struct thread *cur = thread_current ();
+  struct thread *t = thread_current ();
   uint32_t *pd;
-//  struct list *child_list = &cur->child_list;
-  //struct list_elem *e;
+  struct list *zombie_list = &t->zombie_list; 
+  struct list *child_list = &t->child_list;
+  struct list_elem *e;
+  struct zombie *z;
+  int i;
 
-  struct zombie *z = malloc(sizeof(struct zombie));
-  z->tid = cur->tid;
-  z->exit_status = cur->exit_status;
-  if(cur->parent != NULL) {
-      list_push_back(&cur->parent->zombie_list, &z->elem);
-  }
-
-  /* subtle timing issue */
-  if(cur->exec_file != NULL) {
-      file_close(cur->exec_file);
-  }
-  /* */
-
-  sema_up(&cur->exit_sema);
-
-  /*
-  sema_down(&cur->wait_sema);
-  printf("1]]]] remove child list from thread[%p]\n\n", cur);
+  // disable interrupt start
+  enum intr_level old_level = intr_disable();
   for(e = list_begin(child_list); e != list_end(child_list); e = list_next(e)) {
       struct thread *thread = list_entry(e, struct thread, child_elem);
-      printf("2]]]] child[%p]->parent = NULL\n\n", thread);
-      thread->parent = NULL;
-  }
-  sema_up(&cur->wait_sema);
-*/
-
-  if(cur->parent != NULL) {
-      sema_down(&cur->parent->wait_sema);
-      list_remove(&cur->child_elem);
-      sema_up(&cur->parent->wait_sema);
+      thread->parent = NULL;    
   }
 
+  if(t->parent != NULL) {
+      list_remove(&t->child_elem);
+      z = malloc(sizeof(struct zombie));
+      z->tid = t->tid;
+      z->exit_status = t->exit_status;
+      list_push_back(&t->parent->zombie_list, &z->elem);
+  }
+  while(!list_empty(zombie_list)) {
+      e = list_pop_front(zombie_list);
+      z = list_entry(e, struct zombie, elem);
+      free(z);
+  }
+
+  for(i=0; i<MAX_FD; i++) {
+      if(t->fd_table[i].fd != -1) {
+          file_close(t->fd_table[i].file);
+          t->fd_table[i].fd = -1;
+      }
+  }
+  if(t->exec_file != NULL) {
+      file_close(t->exec_file);
+  }
+
+  intr_set_level(old_level);
+
+  if(t->parent != NULL)
+    sema_up(&t->exit_sema);
+  // disable interrupt done 
 
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
     
-  pd = cur->pagedir;
+  pd = t->pagedir;
   if (pd != NULL) 
     {
       /* Correct ordering here is crucial.  We must set
-         cur->pagedir to NULL before switching page directories,
+         t->pagedir to NULL before switching page directories,
          so that a timer interrupt can't switch back to the
          process page directory.  We must activate the base page
          directory before destroying the process's page
          directory, or our active page directory will be one
          that's been freed (and cleared). */
-      cur->pagedir = NULL;
+      t->pagedir = NULL;
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
@@ -572,7 +585,7 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
    user process if WRITABLE is true, read-only otherwise.
 
    Return true if successful, false if a memory allocation error
-   or disk read error occurs. */
+   or disk read error octs. */
 static bool
 load_segment (struct file *file, off_t ofs, uint8_t *upage,
               uint32_t read_bytes, uint32_t zero_bytes, bool writable) 

@@ -116,7 +116,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         thread_exit ();
     }
 }
-///////////////// exit
+
 void syscall_exit(struct intr_frame *f)
 {
     int status = *(int *)(f->esp+4);
@@ -135,7 +135,6 @@ static void syscall_halt(struct intr_frame *f)
     power_off();
 }
 
-///////////////// exec
 static void syscall_exec(struct intr_frame *f)
 {
     char* cmd_line = *(void **)(f->esp+4);
@@ -146,7 +145,6 @@ static void syscall_exec(struct intr_frame *f)
 }
 
 
-////////////////// wait
 static void syscall_wait(struct intr_frame *f)
 {
     int tid = *(int *)(f->esp+4);
@@ -212,7 +210,7 @@ static void syscall_read(struct intr_frame *f)
     check_valid_addr(f, buffer);
 
     if(fd == 0) {
-        //f->eax = input_getc(); 
+        f->eax = input_getc(); 
     }
     else {
         struct file *file = search_file(fd); 

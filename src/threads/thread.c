@@ -443,8 +443,6 @@ init_thread (struct thread *t, const char *name, int priority)
   list_init(&t->zombie_list);
 
   // wait_sema init
-  sema_init(&t->wait_sema, 1);
-  // exit_sema init
   sema_init(&t->exit_sema, 0);
 
   t->exit_status = -1;
