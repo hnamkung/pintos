@@ -141,7 +141,7 @@ process_execute (const char *file_name)
     if(!load_success)
         tid = -1;
 
-    if (tid == TID_ERROR)
+    if (tid == -1 || tid == TID_ERROR)
         palloc_free_page (fn_copy); 
 
     return tid;
@@ -186,14 +186,13 @@ execute_thread (void *fn_copy)
     set_argument_in_stack(file_name, &if_.esp);
     palloc_free_page (fn_copy);
   }
+
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
      arguments on the stack in the form of a `struct intr_frame',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
-
-
 
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
@@ -259,10 +258,8 @@ process_exit (void)
       list_push_back(&cur->parent->zombie_list, &z->elem);
   }
 
-
   /* subtle timing issue */
   if(cur->exec_file != NULL) {
-      file_allow_write(cur->exec_file);
       file_close(cur->exec_file);
   }
   /* */
