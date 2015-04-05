@@ -114,9 +114,10 @@ void set_argument_in_stack(char *file_name, void **esp_pointer)
 tid_t
 process_execute (const char *file_name) 
 {
-    struct semaphore sema;
     void *fn_copy;
+    struct semaphore sema;
     struct thread *t = thread_current();
+    int load_success;
     tid_t tid;
 
     /* Make a copy of FILE_NAME.
@@ -129,12 +130,15 @@ process_execute (const char *file_name)
 
     *(void **)fn_copy = &sema;
     *(void **)(fn_copy+4) = t;
-    strlcpy (fn_copy+8, file_name, PGSIZE-8);
+    *(int **)(fn_copy+8) = &load_success;
+    strlcpy (fn_copy+12, file_name, PGSIZE-12);
 
     /* Create a new thread to execute FILE_NAME. */
     tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
     sema_down(&sema);
 
+    if(!load_success)
+        tid = -1;
 
     if (tid == TID_ERROR)
         palloc_free_page (fn_copy); 
@@ -152,7 +156,8 @@ execute_thread (void *fn_copy)
   
   struct semaphore *sema = *(void **)fn_copy;
   struct thread *parent = *(void **)(fn_copy+4);
-  char *file_name = fn_copy+8;
+  int *load_success = *(int **)(fn_copy+8);
+  char *file_name = fn_copy+12;
   char *fn_front;
   struct thread *t = thread_current();
 
@@ -168,14 +173,19 @@ execute_thread (void *fn_copy)
   fn_front = get_fn_front(file_name);
   memcpy(t->name, fn_front, 16);
   success = load (fn_front, &if_.eip, &if_.esp);
-  set_argument_in_stack(file_name, &if_.esp);
 
+  *load_success = success;
+  sema_up(sema);
 
-  /* If load failed, quit. */
-  palloc_free_page (fn_copy);
-  if (!success) 
-    thread_exit ();
-
+  if (!success) {
+    t->exit_status = -1;
+    thread_exit();
+    return;
+  }
+  else {
+    set_argument_in_stack(file_name, &if_.esp);
+    palloc_free_page (fn_copy);
+  }
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
@@ -184,7 +194,6 @@ execute_thread (void *fn_copy)
      and jump to it. */
 
 
-  sema_up(sema);
 
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
@@ -253,8 +262,10 @@ process_exit (void)
 
 
   /* subtle timing issue */
-  file_allow_write(cur->exec_file);
-  file_close(cur->exec_file);
+  if(cur->exec_file != NULL) {
+      file_allow_write(cur->exec_file);
+      file_close(cur->exec_file);
+  }
   /* */
 
   sema_up(&cur->exit_sema);
