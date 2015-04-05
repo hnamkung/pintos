@@ -62,6 +62,7 @@ static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
     int SYS_NUM = *(int *)f->esp;
+    
     if(SYS_NUM == SYS_WRITE) {
          syscall_write(f);
     }
@@ -113,6 +114,10 @@ static void syscall_exit(struct intr_frame *f)
 {
     int status = *(int *)(f->esp+4);
     struct thread *t = thread_current();
+
+    if(is_kernel_vaddr(f->esp+4))
+        status = -1;
+
     printf("%s: exit(%d)\n", t->name, status);
     t->exit_status = status;
     thread_exit();
