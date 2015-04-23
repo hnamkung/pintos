@@ -1,0 +1,5 @@
+To reduce time to recover
+
+1. Memory Access -> exception.c, before page fault, now : kernel_address+NULL -> kernel_address+not mapped user address
+
+2. filesys not thread safe operation -> lock
