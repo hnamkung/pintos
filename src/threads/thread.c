@@ -24,6 +24,10 @@
    that are ready to run but not actually running. */
 static struct list ready_list;
 
+/* List of all processes.  Processes are added to this list
+   when they are first scheduled and removed when they exit. */
+static struct list all_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -64,7 +68,7 @@ static void init_thread (struct thread *, const char *name, int priority);
 static bool is_thread (struct thread *) UNUSED;
 static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
-void schedule_tail (struct thread *prev);
+void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
 /* Initializes the threading system by transforming the code
@@ -87,6 +91,7 @@ thread_init (void)
 
   lock_init (&tid_lock);
   list_init (&ready_list);
+  list_init (&all_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -166,6 +171,7 @@ thread_create (const char *name, int priority,
   struct switch_entry_frame *ef;
   struct switch_threads_frame *sf;
   tid_t tid;
+  enum intr_level old_level;
 
   ASSERT (function != NULL);
 
@@ -177,6 +183,11 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+
+  /* Prepare thread for first run by initializing its stack.
+     Do this atomically so intermediate values for the 'stack' 
+     member cannot be observed. */
+  old_level = intr_disable ();
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -191,6 +202,9 @@ thread_create (const char *name, int priority,
   /* Stack frame for switch_threads(). */
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
+  sf->ebp = 0;
+
+  intr_set_level (old_level);
 
   /* Add to run queue. */
   thread_unblock (t);
@@ -216,7 +230,12 @@ thread_block (void)
 
 /* Transitions a blocked thread T to the ready-to-run state.
    This is an error if T is not blocked.  (Use thread_yield() to
-   make the running thread ready.) */
+   make the running thread ready.)
+
+   This function does not preempt the running thread.  This can
+   be important: if the caller had disabled interrupts itself,
+   it may expect that it can atomically unblock a thread and
+   update other data. */
 void
 thread_unblock (struct thread *t) 
 {
@@ -275,9 +294,11 @@ thread_exit (void)
   process_exit ();
 #endif
 
-  /* Just set our status to dying and schedule another process.
-     We will be destroyed during the call to schedule_tail(). */
+  /* Remove thread from all threads list, set our status to dying,
+     and schedule another process.  That process will destroy us
+     when it calls thread_schedule_tail(). */
   intr_disable ();
+  list_remove (&thread_current()->allelem);
   thread_current ()->status = THREAD_DYING;
   schedule ();
   NOT_REACHED ();
@@ -299,6 +320,23 @@ thread_yield (void)
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
+}
+
+/* Invoke function 'func' on all threads, passing along 'aux'.
+   This function must be called with interrupts off. */
+void
+thread_foreach (thread_action_func *func, void *aux)
+{
+  struct list_elem *e;
+
+  ASSERT (intr_get_level () == INTR_OFF);
+
+  for (e = list_begin (&all_list); e != list_end (&all_list);
+       e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, allelem);
+      func (t, aux);
+    }
 }
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
@@ -431,6 +469,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+  list_push_back (&all_list, &t->allelem);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -477,7 +516,7 @@ next_thread_to_run (void)
    After this function and its caller returns, the thread switch
    is complete. */
 void
-schedule_tail (struct thread *prev) 
+thread_schedule_tail (struct thread *prev)
 {
   struct thread *cur = running_thread ();
   
@@ -511,8 +550,8 @@ schedule_tail (struct thread *prev)
    running to some other state.  This function finds another
    thread to run and switches to it.
 
-   It's not safe to call printf() until schedule_tail() has
-   completed. */
+   It's not safe to call printf() until thread_schedule_tail()
+   has completed. */
 static void
 schedule (void) 
 {
@@ -526,7 +565,7 @@ schedule (void)
 
   if (cur != next)
     prev = switch_threads (cur, next);
-  schedule_tail (prev); 
+  thread_schedule_tail (prev);
 }
 
 /* Returns a tid to use for a new thread. */
