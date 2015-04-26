@@ -44,7 +44,7 @@ intr_entry:
    stack, and returns to the caller.
 
    This is a separate function because it is called directly when
-   we launch a new user process (see execute_thread() in
+   we launch a new user process (see start_process() in
    userprog/process.c). */
 .globl intr_exit
 .func intr_exit
@@ -111,7 +111,6 @@ intr_stubs:
    or `REAL', if the CPU pushes an error code for us. */
 #define STUB(NUMBER, TYPE)                      \
 	.text;                                  \
-.globl intr##NUMBER##_stub;                     \
 .func intr##NUMBER##_stub;			\
 intr##NUMBER##_stub:                            \
 	TYPE;                                   \

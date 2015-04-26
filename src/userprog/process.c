@@ -23,8 +23,8 @@
 #define MAX_ARGS 256
 #define MAX_FN_FRONT 100
 
-static thread_func execute_thread NO_RETURN;
 void set_argument_in_stack(char *file_name, void **esp_pointer);
+static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 char* get_fn_front(char *file_name);
 
@@ -137,7 +137,7 @@ process_execute (const char *file_name)
     strlcpy (fn_copy+12, file_name, PGSIZE-12);
 
     /* Create a new thread to execute FILE_NAME. */
-    tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
+    tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
     if(tid == TID_ERROR) {
         palloc_free_page (fn_copy); 
         return tid;
@@ -156,7 +156,7 @@ process_execute (const char *file_name)
 /* A thread function that loads a user process and starts it
    running. */
 static void
-execute_thread (void *fn_copy)
+start_process (void *fn_copy)
 {
   struct intr_frame if_;
   bool success;
@@ -318,7 +318,8 @@ process_exit (void)
 }
 
 /* Sets up the CPU for running user code in the current
-   thread. */
+   thread.
+   This function is called on every context switch. */
 void
 process_activate (void)
 {
@@ -329,7 +330,7 @@ process_activate (void)
 
   /* Set thread's kernel stack for use in processing
      interrupts. */
-  tss_set_esp0 ((uint8_t *) t + PGSIZE);
+  tss_update ();
 }
 
 /* We load ELF binaries.  The following definitions are taken
