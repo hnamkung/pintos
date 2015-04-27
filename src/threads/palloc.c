@@ -74,37 +74,39 @@ palloc_init (void)
    then the pages are filled with zeros.  If too few pages are
    available, returns a null pointer, unless PAL_ASSERT is set in
    FLAGS, in which case the kernel panics. */
-void *
+    void *
 palloc_get_multiple (enum palloc_flags flags, size_t page_cnt)
 {
-  struct pool *pool = flags & PAL_USER ? &user_pool : &kernel_pool;
-  void *pages;
-  size_t page_idx;
+    struct pool *pool = flags & PAL_USER ? &user_pool : &kernel_pool;
+    void *pages;
+    size_t page_idx;
 
-  if (page_cnt == 0)
-    return NULL;
+    if (page_cnt == 0)
+        return NULL;
 
-  lock_acquire (&pool->lock);
-  page_idx = bitmap_scan_and_flip (pool->used_map, 0, page_cnt, false);
-  lock_release (&pool->lock);
+    lock_acquire (&pool->lock);
+    page_idx = bitmap_scan_and_flip (pool->used_map, 0, page_cnt, false);
+    lock_release (&pool->lock);
 
-  if (page_idx != BITMAP_ERROR)
-    pages = pool->base + PGSIZE * page_idx;
-  else
-    pages = NULL;
-
-  if (pages != NULL) 
-    {
-      if (flags & PAL_ZERO)
-        memset (pages, 0, PGSIZE * page_cnt);
+    if (page_idx != BITMAP_ERROR) {
+        pages = pool->base + PGSIZE * page_idx;
     }
-  else 
-    {
-      if (flags & PAL_ASSERT)
-        PANIC ("palloc_get: out of pages");
+    else {
+        pages = NULL;
     }
 
-  return pages;
+    if (pages != NULL) 
+    {
+        if (flags & PAL_ZERO)
+            memset (pages, 0, PGSIZE * page_cnt);
+    }
+    else 
+    {
+        if (flags & PAL_ASSERT)
+            PANIC ("palloc_get: out of pages");
+    }
+
+    return pages;
 }
 
 /* Obtains a single free page and returns its kernel virtual
