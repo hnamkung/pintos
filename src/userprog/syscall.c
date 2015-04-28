@@ -30,10 +30,10 @@ static void syscall_seek(struct intr_frame *f);
 static void syscall_tell(struct intr_frame *f);
 static void syscall_close(struct intr_frame *f);
 
-void
+    void
 syscall_init (void) 
 {
-  intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+    intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
 struct file* search_file(int fd)
@@ -57,7 +57,7 @@ void check_valid_addr(struct intr_frame *f, void *addr)
 }
 
 
-static void
+    static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
     struct thread *t = thread_current();
@@ -71,7 +71,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     int SYS_NUM = *(int *)f->esp;
 
     if(SYS_NUM == SYS_WRITE) {
-         syscall_write(f);
+        syscall_write(f);
     }
     else if(SYS_NUM == SYS_HALT) {
         syscall_halt(f);
@@ -174,7 +174,7 @@ static void syscall_open(struct intr_frame *f)
     struct thread *t = thread_current();
 
     check_valid_addr(f, name);
-    
+
     file = filesys_open(name);
 
     if(file == NULL) {
@@ -206,7 +206,7 @@ static void syscall_read(struct intr_frame *f)
     int fd = *(int *)(f->esp+4);
     void *buffer = *(void **)(f->esp+8);
     unsigned size = *(unsigned *)(f->esp+12);
-    
+
     check_valid_addr(f, buffer);
 
     if(fd == 0) {
@@ -228,7 +228,7 @@ static void syscall_write(struct intr_frame *f)
     void *buffer = *(void **)(f->esp + 8);
     unsigned size = *(unsigned *)(f->esp + 12);
     check_valid_addr(f, buffer);
-    
+
     if(fd == 1) {
         putbuf(buffer, size);
         f->eax = size;

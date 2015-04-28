@@ -6,10 +6,10 @@
 
 /* Interrupts on or off? */
 enum intr_level 
-  {
+{
     INTR_OFF,             /* Interrupts disabled. */
     INTR_ON               /* Interrupts enabled. */
-  };
+};
 
 enum intr_level intr_get_level (void);
 enum intr_level intr_set_level (enum intr_level);
@@ -18,7 +18,7 @@ enum intr_level intr_disable (void);
 
 /* Interrupt stack frame. */
 struct intr_frame
-  {
+{
     /* Pushed by intr_entry in intr-stubs.S.
        These are the interrupted task's saved registers. */
     uint32_t edi;               /* Saved EDI. */
@@ -53,14 +53,14 @@ struct intr_frame
     uint32_t eflags;            /* Saved CPU flags. */
     void *esp;                  /* Saved stack pointer. */
     uint16_t ss, :16;           /* Data segment for esp. */
-  };
+};
 
 typedef void intr_handler_func (struct intr_frame *);
 
 void intr_init (void);
 void intr_register_ext (uint8_t vec, intr_handler_func *, const char *name);
 void intr_register_int (uint8_t vec, int dpl, enum intr_level,
-                        intr_handler_func *, const char *name);
+        intr_handler_func *, const char *name);
 bool intr_context (void);
 void intr_yield_on_return (void);
 
