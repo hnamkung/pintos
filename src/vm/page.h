@@ -2,12 +2,14 @@
 #define VM_PAGE_H
 
 #include "threads/palloc.h"
+#include "vm/frame.h"
 #include <hash.h>
 
 struct page
 {
     int tid;
     uint8_t* vpage;
+    struct frame *f;
     struct hash_elem h_elem;
 };
 

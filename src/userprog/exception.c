@@ -157,8 +157,10 @@ page_fault (struct intr_frame *f)
     if(user) {
         //printf("fault : %p \n esp : %p\n\n", fault_addr, f->esp);
         if(fault_addr >= f->esp-32 && fault_addr < PHYS_BASE) {
-            uint8_t *kpage = palloc_get_page(PAL_USER | PAL_ZERO);
-            pagedir_set_page(thread_current()->pagedir, pg_round_down(fault_addr), kpage, true);                    
+            uint8_t *vpage = pg_round_down(fault_addr);
+            uint8_t *ppage = frame_alloc(vpage, PAL_USER | PAL_ZERO);
+            pagedir_set_page(thread_current()->pagedir, vpage, ppage, true);                    
+
             return;
         }
     }

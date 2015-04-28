@@ -2,6 +2,8 @@
 #define VM_FRAME_H
 
 #include "threads/palloc.h"
+#include "threads/thread.h"
+#include "vm/page.h"
 #include <hash.h>
 
 struct list frame_table;
