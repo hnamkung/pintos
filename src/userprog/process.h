@@ -2,6 +2,10 @@
 #define USERPROG_PROCESS_H
 
 #include "threads/thread.h"
+#include <hash.h>
+
+struct hash frame_table;
+struct hash page_table;
 
 tid_t process_execute (const char *file_name);
 int process_wait (tid_t);
