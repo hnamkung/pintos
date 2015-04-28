@@ -636,22 +636,22 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
-static bool
+    static bool
 setup_stack (void **esp) 
 {
-  uint8_t *kpage;
-  bool success = false;
+    uint8_t *kpage;
+    bool success = false;
 
-  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-  if (kpage != NULL) 
+    kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+    if (kpage != NULL) 
     {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-      if (success)
-        *esp = PHYS_BASE;
-      else
-        palloc_free_page (kpage);
+        success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+        if (success)
+            *esp = PHYS_BASE;
+        else
+            palloc_free_page (kpage);
     }
-  return success;
+    return success;
 }
 
 /* Adds a mapping from user virtual address UPAGE to kernel
