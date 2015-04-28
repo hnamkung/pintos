@@ -130,12 +130,16 @@ process_execute (const char *file_name)
         return TID_ERROR;
     }
 
+    /* project 2 */
     sema_init(&sema, 0);
 
     *(void **)fn_copy = &sema;
     *(void **)(fn_copy+4) = t;
     *(int **)(fn_copy+8) = &load_success;
     strlcpy (fn_copy+12, file_name, PGSIZE-12);
+
+    /* project 3 */
+    page_table_init(t->page_table);
 
     /* Create a new thread to execute FILE_NAME. */
     tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
@@ -605,7 +609,8 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
         size_t page_zero_bytes = PGSIZE - page_read_bytes;
 
         /* Get a page of memory. */
-        uint8_t *kpage = palloc_get_page (PAL_USER);
+        //uint8_t *kpage = palloc_get_page (PAL_USER);
+        uint8_t *kpage = frame_alloc (upage, PAL_USER);
         if (kpage == NULL)
             return false;
 
@@ -640,7 +645,8 @@ setup_stack (void **esp)
     uint8_t *kpage;
     bool success = false;
 
-    kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+    kpage = frame_alloc(((uint8_t *) PHYS_BASE) - PGSIZE, PAL_USER | PAL_ZERO);
+    
     if (kpage != NULL) 
     {
         success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);

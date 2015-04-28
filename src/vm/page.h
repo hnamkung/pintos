@@ -1,13 +1,18 @@
-#include "userprog/process.h"
+#ifndef VM_PAGE_H
+#define VM_PAGE_H
+
 #include "threads/palloc.h"
 #include <hash.h>
 
 struct page
 {
-    tid_t owner;
-    struct frame *frame;
+    int tid;
+    uint8_t* vpage;
     struct hash_elem h_elem;
 };
 
-unsigned page_hash(const struct hash_elem *p_, void*aux);
+void page_table_init(struct hash page_table);
 
+
+
+#endif

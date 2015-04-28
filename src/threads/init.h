@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "vm/frame.h"
+#include "vm/swap.h"
 
 /* Physical memory size, in 4 kB pages. */
 extern size_t ram_pages;

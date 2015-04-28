@@ -7,6 +7,8 @@
 
 #include "userprog/syscall.h"
 #include "threads/synch.h"
+#include "vm/page.h"
+#include <hash.h>
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -102,8 +104,6 @@ struct thread
 #endif
 
     /* project 2 */
-
-
     // file descriptor
     struct file_fd fd_table[MAX_FD];
 
@@ -121,7 +121,8 @@ struct thread
     // executable file
     struct file * exec_file;
 
-    /* project 2 */
+    /* project 3 */
+    struct hash page_table;
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */

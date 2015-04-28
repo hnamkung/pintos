@@ -1,16 +1,22 @@
-#include "userprog/process.h"
+#ifndef VM_FRAME_H
+#define VM_FRAME_H
+
 #include "threads/palloc.h"
 #include <hash.h>
 
+struct list frame_table;
+
 struct frame
 {
-    tid_t owner;
-    struct hash_elem h_elem;
+    int tid;
+    uint8_t* vpage;
+    uint8_t* ppage;
     struct list_elem l_elem;
 };
 
-void frame_init();
-void* frame_alloc(uint8_t* vaddr, enum palloc_flags flag);
-void frame_free(void* paddr);
+void frame_table_init();
+void* frame_alloc(uint8_t* vpage, enum palloc_flags flag);
+void frame_free(void* ppage);
 
+#endif 
 

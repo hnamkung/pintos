@@ -104,6 +104,9 @@ main (void)
     syscall_init ();
 #endif
 
+    // project 3
+    frame_table_init();
+
     /* Start thread scheduler and enable interrupts. */
     thread_start ();
     serial_init_queue ();

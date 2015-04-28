@@ -1,12 +1,16 @@
-#include "userprog/process.h"
+#ifndef VM_SWAP_H
+#define VM_SWAP_H
+
 #include "threads/palloc.h"
 #include "devices/disk.h"
 #include <hash.h>
 
 struct swap
 {
-    tid_t owner;
+    int tid;
     struct hash_elem elem;
 };
 
 void swap_init();
+
+#endif
