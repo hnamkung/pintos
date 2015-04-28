@@ -1,6 +1,6 @@
 /* This file is derived from source code used in MIT's 6.828
-   course.  The original copyright notice is reproduced in full
-   below. */
+     course.    The original copyright notice is reproduced in full
+     below. */
 
 /*
  * Copyright (C) 1997 Massachusetts Institute of Technology 
@@ -44,17 +44,17 @@
 
 #### This code should be stored in the first sector of the hard disk.
 #### When the BIOS runs, it loads this code at physical address
-#### 0x7c00-0x7e00 (512 bytes).  Then it jumps to the beginning of it,
-#### in real mode.  This code switches into protected mode (32-bit
+#### 0x7c00-0x7e00 (512 bytes).    Then it jumps to the beginning of it,
+#### in real mode.    This code switches into protected mode (32-bit
 #### mode) so that all of memory can accessed, loads the kernel into
 #### memory, and jumps to the first byte of the kernel, where start.S
 #### is linked.
 	
 /* Flags in control register 0. */
-#define CR0_PE 0x00000001      /* Protection Enable. */
-#define CR0_EM 0x00000004      /* (Floating-point) Emulation. */
-#define CR0_PG 0x80000000      /* Paging. */
-#define CR0_WP 0x00010000      /* Write-Protect enable in kernel mode. */
+#define CR0_PE 0x00000001            /* Protection Enable. */
+#define CR0_EM 0x00000004            /* (Floating-point) Emulation. */
+#define CR0_PG 0x80000000            /* Paging. */
+#define CR0_WP 0x00010000            /* Write-Protect enable in kernel mode. */
 
 
 .globl start
@@ -84,8 +84,8 @@ start:
 	movw %ax, %ss
 	movw $0x7c00, %sp
 	
-#### Enable A20.  Address line 20 is tied to low when the machine
-#### boots, which prevents addressing memory about 1 MB.  This code
+#### Enable A20.    Address line 20 is tied to low when the machine
+#### boots, which prevents addressing memory about 1 MB.    This code
 #### fixes it.
 	
 # Poll status register while busy.
@@ -110,10 +110,10 @@ start:
 	movb $0xdf, %al
 	outb %al, $0x60
 
-#### Get memory size, via interrupt 15h function 88h.  Returns CF
+#### Get memory size, via interrupt 15h function 88h.    Returns CF
 #### clear if successful, with AX = (kB of physical memory) - 1024.
 #### This only works for memory sizes <= 65 MB, which should be fine
-#### for our purposes.  We cap memory at 64 MB because that's all we
+#### for our purposes.    We cap memory at 64 MB because that's all we
 #### prepare page tables for, below.
 	
 	movb $0x88, %ah
@@ -176,26 +176,26 @@ start:
 
 # Note that interrupts are still off.
 
-# Point the GDTR to our GDT.  Protected mode requires a GDT.
+# Point the GDTR to our GDT.    Protected mode requires a GDT.
 # We need a data32 prefix to ensure that all 32 bits of the GDT
 # descriptor are loaded (default is to load only 24 bits).
 
 	data32 lgdt gdtdesc
 
 # Then we turn on the following bits in CR0:
-#    PE (Protect Enable): this turns on protected mode.
-#    PG (Paging): turns on paging.
-#    WP (Write Protect): if unset, ring 0 code ignores
-#       write-protect bits in page tables (!).
-#    EM (Emulation): forces floating-point instructions to trap.
-#       We don't support floating point. 
+#        PE (Protect Enable): this turns on protected mode.
+#        PG (Paging): turns on paging.
+#        WP (Write Protect): if unset, ring 0 code ignores
+#             write-protect bits in page tables (!).
+#        EM (Emulation): forces floating-point instructions to trap.
+#             We don't support floating point. 
 	
 	movl %cr0, %eax
 	orl $CR0_PE | CR0_PG | CR0_WP | CR0_EM, %eax
 	movl %eax, %cr0
 	
-# We're now in protected mode in a 16-bit segment.  The CPU still has
-# the real-mode code segment cached in %cs's segment descriptor.  We
+# We're now in protected mode in a 16-bit segment.    The CPU still has
+# the real-mode code segment cached in %cs's segment descriptor.    We
 # need to reload %cs, and the easiest way is to use a far jump.
 # Because we're not in a 32-bit segment the data32 prefix is needed to
 # jump to a 32-bit offset.
@@ -304,7 +304,7 @@ read_sector:
 gdt:
 	.quad 0x0000000000000000	# null seg
 	.quad 0x00cf9a000000ffff	# code seg
-	.quad 0x00cf92000000ffff        # data seg
+	.quad 0x00cf92000000ffff                # data seg
 	
 gdtdesc:
 	.word	0x17			# sizeof (gdt) - 1
@@ -313,7 +313,7 @@ gdtdesc:
 #### Fatal error.
 #### Print panic_message (with help from the BIOS) and spin.
 
-panic:  .code16			# We only panic in real mode.
+panic:    .code16			# We only panic in real mode.
 	movw $panic_message, %si
 	movb $0xe, %ah
 	subb %bh, %bh

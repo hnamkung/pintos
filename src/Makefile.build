@@ -12,7 +12,7 @@ include ../../tests/Make.tests
 os.dsk: CPPFLAGS += -I$(SRCDIR)/lib/kernel
 
 # Core kernel.
-threads_SRC  = threads/init.c		# Main program.
+threads_SRC    = threads/init.c		# Main program.
 threads_SRC += threads/thread.c		# Thread management core.
 threads_SRC += threads/switch.S		# Thread switch routine.
 threads_SRC += threads/interrupt.c	# Interrupt core.
@@ -23,7 +23,7 @@ threads_SRC += threads/malloc.c		# Subpage allocator.
 threads_SRC += threads/start.S		# Startup code.
 
 # Device driver code.
-devices_SRC  = devices/timer.c		# Timer device.
+devices_SRC    = devices/timer.c		# Timer device.
 devices_SRC += devices/kbd.c		# Keyboard device.
 devices_SRC += devices/vga.c		# Video device.
 devices_SRC += devices/serial.c		# Serial port device.
@@ -32,7 +32,7 @@ devices_SRC += devices/input.c		# Serial and keyboard input.
 devices_SRC += devices/intq.c		# Interrupt queue.
 
 # Library code shared between kernel and user programs.
-lib_SRC  = lib/debug.c			# Debug helpers.
+lib_SRC    = lib/debug.c			# Debug helpers.
 lib_SRC += lib/random.c			# Pseudo-random numbers.
 lib_SRC += lib/stdio.c			# I/O library.
 lib_SRC += lib/stdlib.c			# Utility functions.
@@ -40,14 +40,14 @@ lib_SRC += lib/string.c			# String functions.
 lib_SRC += lib/arithmetic.c
 
 # Kernel-specific library code.
-lib/kernel_SRC  = lib/kernel/debug.c	# Debug helpers.
+lib/kernel_SRC    = lib/kernel/debug.c	# Debug helpers.
 lib/kernel_SRC += lib/kernel/list.c	# Doubly-linked lists.
 lib/kernel_SRC += lib/kernel/bitmap.c	# Bitmaps.
 lib/kernel_SRC += lib/kernel/hash.c	# Hash tables.
 lib/kernel_SRC += lib/kernel/console.c	# printf(), putchar().
 
 # User process code.
-userprog_SRC  = userprog/process.c	# Process loading.
+userprog_SRC    = userprog/process.c	# Process loading.
 userprog_SRC += userprog/pagedir.c	# Page directories.
 userprog_SRC += userprog/exception.c	# User exception handler.
 userprog_SRC += userprog/syscall.c	# System call handler.
@@ -60,7 +60,7 @@ vm_SRC += vm/frame.c			# Some file.
 vm_SRC += vm/swap.c			# Some file.
 
 # Filesystem code.
-filesys_SRC  = filesys/filesys.c	# Filesystem core.
+filesys_SRC    = filesys/filesys.c	# Filesystem core.
 filesys_SRC += filesys/free-map.c	# Free sector bitmap.
 filesys_SRC += filesys/file.c		# Files.
 filesys_SRC += filesys/directory.c	# Directories.

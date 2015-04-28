@@ -1,4 +1,4 @@
-/* Tests timer_sleep(-100).  Only requirement is that it not crash. */
+/* Tests timer_sleep(-100).    Only requirement is that it not crash. */
 
 #include <stdio.h>
 #include "tests/threads/tests.h"
@@ -10,6 +10,6 @@
 void
 test_alarm_negative (void) 
 {
-  timer_sleep (-100);
-  pass ();
+    timer_sleep (-100);
+    pass ();
 }

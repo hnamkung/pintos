@@ -1,19 +1,19 @@
 #include "threads/loader.h"
 
-        .text
+                .text
 
 /* Main interrupt entry point.
 
-   An internal or external interrupt starts in one of the
-   intrNN_stub routines, which push the `struct intr_frame'
-   frame_pointer, error_code, and vec_no members on the stack,
-   then jump here.
+     An internal or external interrupt starts in one of the
+     intrNN_stub routines, which push the `struct intr_frame'
+     frame_pointer, error_code, and vec_no members on the stack,
+     then jump here.
 
-   We save the rest of the `struct intr_frame' members to the
-   stack, set up some registers as needed by the kernel, and then
-   call intr_handler(), which actually handles the interrupt.
+     We save the rest of the `struct intr_frame' members to the
+     stack, set up some registers as needed by the kernel, and then
+     call intr_handler(), which actually handles the interrupt.
 
-   We "fall through" to intr_exit to return from the interrupt.
+     We "fall through" to intr_exit to return from the interrupt.
 */
 .func intr_entry
 intr_entry:
@@ -23,7 +23,7 @@ intr_entry:
 	pushl %fs
 	pushl %gs
 	pushal
-        
+                
 	/* Set up kernel environment. */
 	cld			/* String instructions go upward. */
 	mov $SEL_KDSEG, %eax	/* Initialize segment registers. */
@@ -40,86 +40,86 @@ intr_entry:
 
 /* Interrupt exit.
 
-   Restores the caller's registers, discards extra data on the
-   stack, and returns to the caller.
+     Restores the caller's registers, discards extra data on the
+     stack, and returns to the caller.
 
-   This is a separate function because it is called directly when
-   we launch a new user process (see execute_thread() in
-   userprog/process.c). */
+     This is a separate function because it is called directly when
+     we launch a new user process (see execute_thread() in
+     userprog/process.c). */
 .globl intr_exit
 .func intr_exit
 intr_exit:
-        /* Restore caller's registers. */
+                /* Restore caller's registers. */
 	popal
 	popl %gs
 	popl %fs
 	popl %es
 	popl %ds
 
-        /* Discard `struct intr_frame' vec_no, error_code,
-           frame_pointer members. */
+                /* Discard `struct intr_frame' vec_no, error_code,
+                     frame_pointer members. */
 	addl $12, %esp
 
-        /* Return to caller. */
+                /* Return to caller. */
 	iret
 .endfunc
 
 /* Interrupt stubs.
 
-   This defines 256 fragments of code, named `intr00_stub'
-   through `intrff_stub', each of which is used as the entry
-   point for the corresponding interrupt vector.  It also puts
-   the address of each of these functions in the correct spot in
-   `intr_stubs', an array of function pointers.
+     This defines 256 fragments of code, named `intr00_stub'
+     through `intrff_stub', each of which is used as the entry
+     point for the corresponding interrupt vector.    It also puts
+     the address of each of these functions in the correct spot in
+     `intr_stubs', an array of function pointers.
 
-   Most of the stubs do this:
+     Most of the stubs do this:
 
-        1. Push %ebp on the stack (frame_pointer in `struct intr_frame').
+                1. Push %ebp on the stack (frame_pointer in `struct intr_frame').
 
-        2. Push 0 on the stack (error_code).
+                2. Push 0 on the stack (error_code).
 
-        3. Push the interrupt number on the stack (vec_no).
+                3. Push the interrupt number on the stack (vec_no).
 
-   The CPU pushes an extra "error code" on the stack for a few
-   interrupts.  Because we want %ebp to be where the error code
-   is, we follow a different path:
+     The CPU pushes an extra "error code" on the stack for a few
+     interrupts.    Because we want %ebp to be where the error code
+     is, we follow a different path:
 
-        1. Push a duplicate copy of the error code on the stack.
+                1. Push a duplicate copy of the error code on the stack.
 
-        2. Replace the original copy of the error code by %ebp.
+                2. Replace the original copy of the error code by %ebp.
 
-        3. Push the interrupt number on the stack. */
+                3. Push the interrupt number on the stack. */
 
 	.data
 .globl intr_stubs
 intr_stubs:
 
 /* This implements steps 1 and 2, described above, in the common
-   case where we just push a 0 error code. */
-#define zero                                    \
-	pushl %ebp;                             \
+     case where we just push a 0 error code. */
+#define zero                                                                        \
+	pushl %ebp;                                                         \
 	pushl $0
 
 /* This implements steps 1 and 2, described above, in the case
-   where the CPU already pushed an error code. */
-#define REAL                                    \
-        pushl (%esp);                           \
-        movl %ebp, 4(%esp)
+     where the CPU already pushed an error code. */
+#define REAL                                                                        \
+                pushl (%esp);                                                     \
+                movl %ebp, 4(%esp)
 
 /* Emits a stub for interrupt vector NUMBER.
-   TYPE is `zero', for the case where we push a 0 error code,
-   or `REAL', if the CPU pushes an error code for us. */
-#define STUB(NUMBER, TYPE)                      \
-	.text;                                  \
-.globl intr##NUMBER##_stub;                     \
+     TYPE is `zero', for the case where we push a 0 error code,
+     or `REAL', if the CPU pushes an error code for us. */
+#define STUB(NUMBER, TYPE)                                            \
+	.text;                                                                    \
+.globl intr##NUMBER##_stub;                                         \
 .func intr##NUMBER##_stub;			\
-intr##NUMBER##_stub:                            \
-	TYPE;                                   \
-	push $0x##NUMBER;                       \
-        jmp intr_entry;                         \
+intr##NUMBER##_stub:                                                        \
+	TYPE;                                                                     \
+	push $0x##NUMBER;                                             \
+                jmp intr_entry;                                                 \
 .endfunc;					\
-                                                \
-	.data;                                  \
+                                                                                                \
+	.data;                                                                    \
 	.long intr##NUMBER##_stub;
 
 /* All the stubs. */

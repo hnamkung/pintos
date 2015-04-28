@@ -7,9 +7,9 @@
 void
 test_main (void) 
 {
-  int handle;
-  
-  CHECK ((handle = open ("sample.txt")) > 1, "open \"sample.txt\"");
-  CHECK (mmap (handle, NULL) == MAP_FAILED, "try to mmap at address 0");
+    int handle;
+    
+    CHECK ((handle = open ("sample.txt")) > 1, "open \"sample.txt\"");
+    CHECK (mmap (handle, NULL) == MAP_FAILED, "try to mmap at address 0");
 }
 

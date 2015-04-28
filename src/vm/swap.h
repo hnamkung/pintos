@@ -5,8 +5,8 @@
 
 struct swap
 {
-    tid_t owner;
-    struct hash_elem elem;
+        tid_t owner;
+        struct hash_elem elem;
 };
 
 void swap_init();

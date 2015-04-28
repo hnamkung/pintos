@@ -13,9 +13,9 @@ void process_exit (void);
 void process_activate (void);
 
 struct zombie {
-    int tid;
-    int exit_status;
-    struct list_elem elem;
+        int tid;
+        int exit_status;
+        struct list_elem elem;
 };
 
 #endif /* userprog/process.h */

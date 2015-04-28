@@ -7,23 +7,23 @@ use tests::lib;
 
 my ($init, @shuffle);
 if (1) {
-    # Use precalculated values.
-    $init = 3115322833;
-    @shuffle = (1691062564, 1973575879, 1647619479, 96566261, 3885786467,
+        # Use precalculated values.
+        $init = 3115322833;
+        @shuffle = (1691062564, 1973575879, 1647619479, 96566261, 3885786467,
 		3022003332, 3614934266, 2704001777, 735775156, 1864109763);
 } else {
-    # Recalculate values.
-    my ($buf) = "";
-    for my $i (0...128 * 1024 - 1) {
+        # Recalculate values.
+        my ($buf) = "";
+        for my $i (0...128 * 1024 - 1) {
 	$buf .= chr (($i * 257) & 0xff);
-    }
-    $init = cksum ($buf);
+        }
+        $init = cksum ($buf);
 
-    random_init (0);
-    for my $i (1...10) {
+        random_init (0);
+        for my $i (1...10) {
 	$buf = shuffle ($buf, length ($buf), 1);
 	push (@shuffle, cksum ($buf));
-    }
+        }
 }
 
 check_expected (IGNORE_EXIT_CODES => 1, [<<EOF]);

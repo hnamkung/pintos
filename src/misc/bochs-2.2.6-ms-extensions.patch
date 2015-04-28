@@ -5,8 +5,8 @@ diff -urp orig/bochs-2.1.1/gui/Makefile.in bochs-2.1.1/gui/Makefile.in
  @SET_MAKE@
  
  CXX = @CXX@
--CXXFLAGS = $(BX_INCDIRS) @CXXFLAGS@  @GUI_CXXFLAGS@
-+CXXFLAGS = $(BX_INCDIRS) @CXXFLAGS@  @GUI_CXXFLAGS@ -fms-extensions
+-CXXFLAGS = $(BX_INCDIRS) @CXXFLAGS@    @GUI_CXXFLAGS@
++CXXFLAGS = $(BX_INCDIRS) @CXXFLAGS@    @GUI_CXXFLAGS@ -fms-extensions
  LOCAL_CXXFLAGS =
  LDFLAGS = @LDFLAGS@
  LIBS = @LIBS@

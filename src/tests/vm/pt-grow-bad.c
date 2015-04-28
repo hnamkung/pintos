@@ -1,5 +1,5 @@
 /* Read from an address 4,096 bytes below the stack pointer.
-   The process must be terminated with -1 exit code. */
+     The process must be terminated with -1 exit code. */
 
 #include <string.h>
 #include "tests/arc4.h"
@@ -10,5 +10,5 @@
 void
 test_main (void)
 {
-  asm volatile ("movl -4096(%esp), %eax");
+    asm volatile ("movl -4096(%esp), %eax");
 }

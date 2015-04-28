@@ -14,7 +14,7 @@ read-zero read-stdout read-bad-fd write-normal write-bad-ptr		\
 write-boundary write-zero write-stdin write-bad-fd exec-once exec-arg	\
 exec-multiple exec-missing exec-bad-ptr wait-simple wait-twice		\
 wait-killed wait-bad-pid multi-recurse multi-child-fd rox-simple	\
-rox-child rox-multichild bad-read bad-write bad-read2 bad-write2        \
+rox-child rox-multichild bad-read bad-write bad-read2 bad-write2                \
 bad-jump bad-jump2)
 
 tests/userprog_PROGS = $(tests/userprog_TESTS) $(addprefix \
@@ -103,7 +103,7 @@ $(foreach prog,$(tests/userprog_PROGS),$(eval $(prog)_SRC += tests/lib.c))
 tests/userprog/args-single_ARGS = onearg
 tests/userprog/args-multiple_ARGS = some arguments for you!
 tests/userprog/args-many_ARGS = a b c d e f g h i j k l m n o p q r s t u v
-tests/userprog/args-dbl-space_ARGS = two  spaces!
+tests/userprog/args-dbl-space_ARGS = two    spaces!
 tests/userprog/multi-recurse_ARGS = 15
 
 tests/userprog/open-normal_PUTFILES += tests/userprog/sample.txt

@@ -3,7 +3,7 @@
 
 # This project is primarily about implementing system calls.
 # If you do so properly, the base file system functionality
-# should come "for free".  Thus, the points emphasis below.
+# should come "for free".    Thus, the points emphasis below.
 
 35%	tests/userprog/Rubric.functionality
 25%	tests/userprog/Rubric.robustness

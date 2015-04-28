@@ -10,6 +10,6 @@ common_checks ("run", @output);
 
 @output = get_core_output ("run", @output);
 fail "missing PASS in output"
-  unless grep ($_ eq '(mlfqs-load-1) PASS', @output);
+    unless grep ($_ eq '(mlfqs-load-1) PASS', @output);
 
 pass;

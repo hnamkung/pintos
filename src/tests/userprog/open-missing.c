@@ -7,7 +7,7 @@
 void
 test_main (void) 
 {
-  int handle = open ("no-such-file");
-  if (handle != -1)
-    fail ("open() returned %d", handle);
+    int handle = open ("no-such-file");
+    if (handle != -1)
+        fail ("open() returned %d", handle);
 }

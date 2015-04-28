@@ -4,9 +4,9 @@
 
 struct frame
 {
-    tid_t owner;
-    struct hash_elem h_elem;
-    struct list_elem l_elem;
+        tid_t owner;
+        struct hash_elem h_elem;
+        struct list_elem l_elem;
 };
 
 void frame_init();

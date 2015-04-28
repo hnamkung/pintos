@@ -8,4 +8,4 @@
 +LDFLAGS = @LDFLAGS@ -lsocket
  LIBS = @LIBS@
  # To compile with readline:
- #   linux needs just -lreadline
+ #     linux needs just -lreadline

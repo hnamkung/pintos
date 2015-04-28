@@ -6,8 +6,8 @@ void syscall_exit(struct intr_frame *f);
 
 struct file_fd
 {
-    struct file *file;
-    int fd;
+        struct file *file;
+        int fd;
 };
 
 #endif /* userprog/syscall.h */

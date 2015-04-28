@@ -2,7 +2,7 @@
 # tests.
 
 # This project is primarily about implementing the file system, but
-# all the previous functionality should work too.  It's not too easy
+# all the previous functionality should work too.    It's not too easy
 # to screw it up, thus the emphasis.
 
 # 65% for extended file system features.

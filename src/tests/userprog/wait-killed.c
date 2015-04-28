@@ -7,5 +7,5 @@
 void
 test_main (void) 
 {
-  msg ("wait(exec()) = %d", wait (exec ("child-bad")));
+    msg ("wait(exec()) = %d", wait (exec ("child-bad")));
 }

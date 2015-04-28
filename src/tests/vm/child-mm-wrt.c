@@ -1,7 +1,7 @@
 /* Child process of mmap-exit.
-   Mmaps a file and writes to it via the mmap'ing, then exits
-   without calling munmap.  The data in the mapped region must be
-   written out at program termination. */
+     Mmaps a file and writes to it via the mmap'ing, then exits
+     without calling munmap.    The data in the mapped region must be
+     written out at program termination. */
 
 #include <string.h>
 #include <syscall.h>
@@ -14,11 +14,11 @@
 void
 test_main (void)
 {
-  int handle;
+    int handle;
 
-  CHECK (create ("sample.txt", sizeof sample), "create \"sample.txt\"");
-  CHECK ((handle = open ("sample.txt")) > 1, "open \"sample.txt\"");
-  CHECK (mmap (handle, ACTUAL) != MAP_FAILED, "mmap \"sample.txt\"");
-  memcpy (ACTUAL, sample, sizeof sample);
+    CHECK (create ("sample.txt", sizeof sample), "create \"sample.txt\"");
+    CHECK ((handle = open ("sample.txt")) > 1, "open \"sample.txt\"");
+    CHECK (mmap (handle, ACTUAL) != MAP_FAILED, "mmap \"sample.txt\"");
+    memcpy (ACTUAL, sample, sizeof sample);
 }
 

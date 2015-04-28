@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use tests::tests;
 my ($cwd_removable) = check_expected (IGNORE_EXIT_CODES => 1,
-				      {NO => <<'EOF', YES => <<'EOF'});
+				            {NO => <<'EOF', YES => <<'EOF'});
 (dir-rm-cwd) begin
 (dir-rm-cwd) open "/"
 (dir-rm-cwd) mkdir "a"
@@ -45,7 +45,7 @@ EOF
 (dir-rm-cwd) end
 EOF
 open (CAN_RMDIR_CWD, ">tests/filesys/extended/can-rmdir-cwd")
-  or die "tests/filesys/extended/can-rmdir-cwd: create: $!\n";
+    or die "tests/filesys/extended/can-rmdir-cwd: create: $!\n";
 print CAN_RMDIR_CWD "$cwd_removable";
 close (CAN_RMDIR_CWD);
 pass;
