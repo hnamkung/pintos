@@ -5,6 +5,7 @@
 #include "devices/disk.h"
 #include "vm/frame.h"
 #include <hash.h>
+#include "lib/kernel/bitmap.h"
 
 struct hash swap_table;
 struct bitmap *swap_bitmap;

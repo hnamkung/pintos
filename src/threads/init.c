@@ -104,9 +104,6 @@ main (void)
     syscall_init ();
 #endif
 
-    // project 3
-    frame_table_init();
-    swap_init();
 
     /* Start thread scheduler and enable interrupts. */
     thread_start ();
@@ -118,6 +115,10 @@ main (void)
     disk_init ();
     filesys_init (format_filesys);
 #endif
+    
+    // project 3
+    frame_table_init();
+    swap_init();
 
     printf ("Boot complete.\n");
 
