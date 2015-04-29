@@ -138,9 +138,6 @@ process_execute (const char *file_name)
     *(int **)(fn_copy+8) = &load_success;
     strlcpy (fn_copy+12, file_name, PGSIZE-12);
 
-    /* project 3 */
-    page_table_init(t->page_table);
-
     /* Create a new thread to execute FILE_NAME. */
     tid = thread_create (file_name, PRI_DEFAULT, execute_thread, fn_copy);
     if(tid == TID_ERROR) {
@@ -172,6 +169,9 @@ execute_thread (void *fn_copy)
     char *file_name = fn_copy+12;
     char *fn_front;
     struct thread *t = thread_current();
+
+    /* project 3 */
+    page_table_init(&t->page_table);
 
     t->parent = parent;
     list_push_back(&parent->child_list, &t->child_elem);

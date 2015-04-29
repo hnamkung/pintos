@@ -16,9 +16,9 @@ bool page_less(const struct hash_elem *aa, const struct hash_elem *bb, void *aux
 } 
 
 
-void page_table_init(struct hash page_table)
+void page_table_init(struct hash * page_table)
 {
-    hash_init(&page_table, page_hash, page_less, NULL);
+    hash_init(page_table, page_hash, page_less, NULL);
 }
 
 struct page * page_search(uint8_t *vpage)

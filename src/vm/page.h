@@ -4,6 +4,7 @@
 #include "threads/palloc.h"
 #include "vm/frame.h"
 #include <hash.h>
+#include "lib/kernel/hash.h"
 
 struct page
 {
@@ -14,7 +15,7 @@ struct page
     struct hash_elem h_elem;
 };
 
-void page_table_init(struct hash page_table);
+void page_table_init(struct hash * page_table);
 struct page * page_search(uint8_t *vpage);
 
 #endif

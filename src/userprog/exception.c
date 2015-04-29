@@ -165,7 +165,6 @@ page_fault (struct intr_frame *f)
         p->valid = 1;
         pagedir_set_page(t->pagedir, vpage, f->ppage, true);                    
     }
-
     if(user) {
         //printf("fault : %p \n esp : %p\n\n", fault_addr, f->esp);
         if(fault_addr >= f->esp-32 && fault_addr < PHYS_BASE) {
