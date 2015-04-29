@@ -10,11 +10,11 @@ struct page
     int tid;
     uint8_t* vpage;
     struct frame *f;
+    bool valid; 
     struct hash_elem h_elem;
 };
 
 void page_table_init(struct hash page_table);
-
-
+struct page * page_search(uint8_t *vpage);
 
 #endif

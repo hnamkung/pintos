@@ -106,6 +106,7 @@ main (void)
 
     // project 3
     frame_table_init();
+    swap_init();
 
     /* Start thread scheduler and enable interrupts. */
     thread_start ();

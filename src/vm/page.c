@@ -21,5 +21,15 @@ void page_table_init(struct hash page_table)
     hash_init(&page_table, page_hash, page_less, NULL);
 }
 
+struct page * page_search(uint8_t *vpage)
+{
+    struct thread *t = thread_current();
+    struct page temp_page;
+    temp_page.vpage = vpage;
+    struct hash_elem *e = hash_find(&t->page_table, &temp_page.h_elem);
+    if(e == NULL)
+        return e;
+    return hash_entry(e, struct page, h_elem);
+}
 
 

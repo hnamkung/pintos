@@ -152,14 +152,25 @@ page_fault (struct intr_frame *f)
     user = (f->error_code & PF_U) != 0;
 
 
+    /* project 3 */
+
     struct thread *t = thread_current();
+    uint8_t* vpage = pg_round_down(fault_addr);
+    struct page *p = page_search(vpage);
+
+    if(p != NULL) { // swap outed page, swap in again
+        // try first to allocate frame
+        struct frame *f = swap_read(vpage);
+        p->f = f;
+        p->valid = 1;
+        pagedir_set_page(t->pagedir, vpage, f->ppage, true);                    
+    }
 
     if(user) {
         //printf("fault : %p \n esp : %p\n\n", fault_addr, f->esp);
         if(fault_addr >= f->esp-32 && fault_addr < PHYS_BASE) {
-            uint8_t *vpage = pg_round_down(fault_addr);
             uint8_t *ppage = frame_alloc(vpage, PAL_USER | PAL_ZERO);
-            pagedir_set_page(thread_current()->pagedir, vpage, ppage, true);                    
+            pagedir_set_page(t->pagedir, vpage, ppage, true);                    
 
             return;
         }
