@@ -1,15 +1,16 @@
+#include "userprog/syscall.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <syscall-nr.h>
 #include "filesys/filesys.h"
 #include "filesys/file.h"
-#include "userprog/syscall.h"
 #include "userprog/process.h"
 #include "userprog/pagedir.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/init.h"
 #include "threads/vaddr.h"
+#include "vm/page.h"
 
 struct file* search_file(int fd);
 
@@ -50,7 +51,8 @@ struct file* search_file(int fd)
 void check_valid_addr(struct intr_frame *f, void *addr)
 {
     struct thread *t = thread_current();
-    if(is_kernel_vaddr(addr) || pagedir_get_page(t->pagedir, addr) == NULL) {
+    if(is_kernel_vaddr(addr)) {
+//    if(is_kernel_vaddr(addr) || (pagedir_get_page(t->pagedir, addr) == NULL && page_search(pg_round_down(addr)) == NULL)) {
         *(int *)(f->esp+4) = -1;
         syscall_exit(f);
     }
@@ -62,7 +64,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 {
     struct thread *t = thread_current();
     void *addr = f->esp;
-    if(is_kernel_vaddr(addr) || pagedir_get_page(t->pagedir, addr) == NULL) {
+    //if(is_kernel_vaddr(addr) || pagedir_get_page(t->pagedir, addr) == NULL) {
+    if(is_kernel_vaddr(addr)) {
         printf("%s: exit(%d)\n", t->name, -1);
         t->exit_status = -1;
         thread_exit();
