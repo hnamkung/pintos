@@ -616,14 +616,18 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 
         /* Get a page of memory. */
         //uint8_t *kpage = palloc_get_page (PAL_USER);
+        lock_acquire(&frame_lock);
         uint8_t *kpage = frame_alloc (upage, PAL_USER);
-        if (kpage == NULL)
+        if (kpage == NULL) {
+            lock_release(&frame_lock);
             return false;
+        }
 
         /* Load this page. */
         if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
         {
             palloc_free_page (kpage);
+            lock_release(&frame_lock);
             return false; 
         }
         memset (kpage + page_read_bytes, 0, page_zero_bytes);
@@ -632,9 +636,11 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
         if (!install_page (upage, kpage, writable)) 
         {
             palloc_free_page (kpage);
+            lock_release(&frame_lock);
             return false; 
         }
 
+        lock_release(&frame_lock);
         /* Advance. */
         read_bytes -= page_read_bytes;
         zero_bytes -= page_zero_bytes;
@@ -651,6 +657,7 @@ setup_stack (void **esp)
     uint8_t *kpage;
     bool success = false;
 
+    lock_acquire(&frame_lock);
     kpage = frame_alloc(((uint8_t *) PHYS_BASE) - PGSIZE, PAL_USER | PAL_ZERO);
     
     if (kpage != NULL) 
@@ -661,6 +668,7 @@ setup_stack (void **esp)
         else
             palloc_free_page (kpage);
     }
+    lock_release(&frame_lock);
     return success;
 }
 

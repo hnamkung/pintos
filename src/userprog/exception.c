@@ -154,6 +154,7 @@ page_fault (struct intr_frame *f)
 
     /* project 3 */
     //printf("fault_addr : %p\n\n");
+    lock_acquire(&frame_lock);
     struct thread *t = thread_current();
     uint8_t* vpage = pg_round_down(fault_addr);
     struct page *p = page_search(vpage);
@@ -161,13 +162,16 @@ page_fault (struct intr_frame *f)
     if(p != NULL) { // swap outed page, swap in again
         struct frame *f = swap_read(vpage);
         pagedir_set_page(t->pagedir, vpage, f->ppage, true);                    
+        lock_release(&frame_lock);
         return;
     }
     if(fault_addr >= f->esp-32 && fault_addr < PHYS_BASE) {
         uint8_t *ppage = frame_alloc(vpage, PAL_USER | PAL_ZERO);
         pagedir_set_page(t->pagedir, vpage, ppage, true);                    
+        lock_release(&frame_lock);
         return;
     }
+    lock_release(&frame_lock);
 
 
     *(int *)(f->esp + 4) = -1;

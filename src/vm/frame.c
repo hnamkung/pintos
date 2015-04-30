@@ -3,6 +3,7 @@
 void frame_table_init()
 {
     list_init(&frame_table);
+    lock_init(&frame_lock);
 }
 
 uint8_t* frame_alloc(uint8_t* vpage, enum palloc_flags flag)

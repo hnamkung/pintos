@@ -8,6 +8,7 @@
 #include <hash.h>
 
 struct list frame_table;
+struct lock frame_lock;
 
 struct frame
 {
