@@ -64,11 +64,13 @@ struct frame * swap_read(uint8_t *vpage)
 void swap_write(struct frame *f)
 {
     size_t start = bitmap_scan_and_flip(swap_bitmap, 0, PGSIZE/DISK_SECTOR_SIZE, false);
+
     struct swap *s = malloc(sizeof(struct swap));
     int count = 0;
     s->tid = f->tid;
     s->vpage = f->vpage;
     s->sector = start;
+
     hash_insert(&swap_table, &s->h_elem);
     while(count < PGSIZE / DISK_SECTOR_SIZE)
     {

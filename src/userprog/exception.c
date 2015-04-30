@@ -159,22 +159,20 @@ page_fault (struct intr_frame *f)
     struct page *p = page_search(vpage);
 
     if(p != NULL) { // swap outed page, swap in again
-        // try first to allocate frame
         struct frame *f = swap_read(vpage);
         p->f = f;
         p->valid = 1;
         pagedir_set_page(t->pagedir, vpage, f->ppage, true);                    
+        return;
     }
     if(user) {
-        //printf("fault : %p \n esp : %p\n\n", fault_addr, f->esp);
         if(fault_addr >= f->esp-32 && fault_addr < PHYS_BASE) {
             uint8_t *ppage = frame_alloc(vpage, PAL_USER | PAL_ZERO);
             pagedir_set_page(t->pagedir, vpage, ppage, true);                    
-
             return;
         }
     }
-
+ 
     *(int *)(f->esp + 4) = -1;
     syscall_exit(f);
 

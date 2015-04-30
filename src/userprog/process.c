@@ -200,7 +200,6 @@ execute_thread (void *fn_copy)
         palloc_free_page (fn_copy);
     }
 
-
     /* Start the user process by simulating a return from an
        interrupt, implemented by intr_exit (in
        threads/intr-stubs.S).  Because intr_exit takes all of its

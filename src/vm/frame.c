@@ -58,17 +58,20 @@ void evict_frame()
 {
     // get victim_frame
     struct frame *victim_f = list_entry(list_pop_front(&frame_table), struct frame, l_elem);
+    uint8_t* vpage = victim_f->vpage;
+    uint8_t* ppage = victim_f->ppage;
 
     // get victim_page
-    struct page *victim_p = frame_search(victim_f->vpage);
+    struct page *victim_p = page_search(vpage);
     victim_p->f = NULL;
     victim_p->valid = 0;
 
-    // clear page table
-    pagedir_clear_page(thread_current()->pagedir, victim_f->vpage);
-    
     // victim_frame -> disk
     swap_write(victim_f);
+    
+    // free frame and clear page table
+    palloc_free_page(ppage);
+    pagedir_clear_page(thread_current()->pagedir, victim_f->vpage);
 
     // free frame
     free(victim_f);
