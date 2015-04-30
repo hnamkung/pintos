@@ -153,7 +153,8 @@ page_fault (struct intr_frame *f)
 
 
     /* project 3 */
-    //printf("fault_addr : %p\n\n");
+    //printf("%d] fault_addr : %p\n\n", thread_current()->tid, fault_addr);
+
     lock_acquire(&frame_lock);
     struct thread *t = thread_current();
     uint8_t* vpage = pg_round_down(fault_addr);

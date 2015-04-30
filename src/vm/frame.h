@@ -15,6 +15,7 @@ struct frame
     int tid;
     uint8_t* vpage;
     uint8_t* ppage;
+    uint32_t *pagedir;
     struct list_elem l_elem;
 };
 

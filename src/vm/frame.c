@@ -9,7 +9,7 @@ void frame_table_init()
 uint8_t* frame_alloc(uint8_t* vpage, enum palloc_flags flag)
 {
     uint8_t* ppage = palloc_evict_if_necessary(flag);
-    //printf("1. frame alloc] %p -> %p\n", vpage, ppage);
+    //printf("%d] 1. frame alloc] %p -> %p\n", thread_current()->tid, vpage, ppage);
 
     struct thread *t = thread_current();
     
@@ -18,6 +18,7 @@ uint8_t* frame_alloc(uint8_t* vpage, enum palloc_flags flag)
     f->tid = t->tid;
     f->vpage = vpage;
     f->ppage = ppage;
+    f->pagedir = t->pagedir;
     list_push_back(&frame_table, &f->l_elem);
 
     // set up page table
@@ -61,16 +62,19 @@ void thread_exit_free_frames()
 // private functions
 void evict_frame()
 {
+    struct thread *t = thread_current();
     // get victim_frame
     struct frame *victim_f = list_entry(list_pop_front(&frame_table), struct frame, l_elem);
+
     uint8_t* vpage = victim_f->vpage;
     uint8_t* ppage = victim_f->ppage;
+    uint32_t* pagedir = victim_f->pagedir;
 
     // victim_frame -> disk
     swap_write(victim_f);
     
     // free frame and clear page table
-    pagedir_clear_page(thread_current()->pagedir, victim_f->vpage);
+    pagedir_clear_page(pagedir, victim_f->vpage);
     palloc_free_page(ppage);
 
     // free frame
