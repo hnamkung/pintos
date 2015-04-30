@@ -10,8 +10,6 @@ struct page
 {
     int tid;
     uint8_t* vpage;
-    struct frame *f;
-    bool valid; 
     struct hash_elem h_elem;
 };
 

@@ -39,7 +39,6 @@ void thread_exit_free_pages()
     struct hash page_table = t->page_table;
     struct page *p;
     struct hash_iterator i;
-      
 
     if(hash_empty(&page_table))
         return;

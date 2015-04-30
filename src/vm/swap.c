@@ -65,7 +65,7 @@ struct frame * swap_read(uint8_t *vpage)
 
 void swap_write(struct frame *f)
 {
-//    printf("2. swap out] %p -> %p\n", f->vpage, f->ppage);
+    //printf("2. swap out] %p -> %p\n", f->vpage, f->ppage);
 
     size_t start = bitmap_scan_and_flip(swap_bitmap, 0, PGSIZE/DISK_SECTOR_SIZE, false);
 

@@ -23,8 +23,6 @@ uint8_t* frame_alloc(uint8_t* vpage, enum palloc_flags flag)
     struct page *p = malloc(sizeof(struct page));  
     p->tid = t->tid;
     p->vpage = vpage;
-    //p->f = f;
-    //p->valid = 1;
     hash_insert(&t->page_table, &p->h_elem);
     
 
@@ -35,12 +33,7 @@ uint8_t* palloc_evict_if_necessary(enum palloc_flags flag)
     uint8_t* ppage = palloc_get_page(flag);
     if(ppage == NULL) {
         evict_frame();
-        ppage = palloc_get_page(flag);
-
-        // should not happen, panic the kernel
-        if(ppage == NULL) {
-            ASSERT(false);
-        }
+        ppage = palloc_get_page(flag | PAL_ASSERT);
     }
     return ppage;
 }
@@ -57,7 +50,6 @@ void thread_exit_free_frames()
         f = list_entry(e, struct frame, l_elem);
         if(f->tid == tid) {
             e = list_remove(e);
-//            palloc_free_page(f->ppage);
             free(f);
         } else {
             e = list_next(e);
@@ -72,11 +64,6 @@ void evict_frame()
     struct frame *victim_f = list_entry(list_pop_front(&frame_table), struct frame, l_elem);
     uint8_t* vpage = victim_f->vpage;
     uint8_t* ppage = victim_f->ppage;
-
-    // get victim_page
-    struct page *victim_p = page_search(vpage);
-    //victim_p->f = NULL;
-    //victim_p->valid = 0;
 
     // victim_frame -> disk
     swap_write(victim_f);

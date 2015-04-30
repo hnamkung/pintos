@@ -160,8 +160,6 @@ page_fault (struct intr_frame *f)
 
     if(p != NULL) { // swap outed page, swap in again
         struct frame *f = swap_read(vpage);
-        p->f = f;
-        p->valid = 1;
         pagedir_set_page(t->pagedir, vpage, f->ppage, true);                    
         return;
     }
