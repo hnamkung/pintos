@@ -8,6 +8,7 @@ void frame_table_init()
 uint8_t* frame_alloc(uint8_t* vpage, enum palloc_flags flag)
 {
     uint8_t* ppage = palloc_evict_if_necessary(flag);
+    //printf("1. frame alloc] %p -> %p\n", vpage, ppage);
 
     struct thread *t = thread_current();
     
@@ -22,9 +23,10 @@ uint8_t* frame_alloc(uint8_t* vpage, enum palloc_flags flag)
     struct page *p = malloc(sizeof(struct page));  
     p->tid = t->tid;
     p->vpage = vpage;
-    p->f = f;
-    p->valid = 1;
+    //p->f = f;
+    //p->valid = 1;
     hash_insert(&t->page_table, &p->h_elem);
+    
 
     return ppage;
 }
@@ -44,14 +46,24 @@ uint8_t* palloc_evict_if_necessary(enum palloc_flags flag)
 }
 
 
-void frame_free(void* ppage)
+void thread_exit_free_frames()
 {
-}
+    struct thread * t = thread_current();
+    int tid = t->tid;
+    struct frame *f;
+    struct list_elem *e;
 
-struct frame * frame_search(uint8_t* vpage)
-{
+    for(e = list_begin(&frame_table); e != list_end(&frame_table); ) {
+        f = list_entry(e, struct frame, l_elem);
+        if(f->tid == tid) {
+            e = list_remove(e);
+//            palloc_free_page(f->ppage);
+            free(f);
+        } else {
+            e = list_next(e);
+        }
+    }
 }
-
 
 // private functions
 void evict_frame()
@@ -63,15 +75,15 @@ void evict_frame()
 
     // get victim_page
     struct page *victim_p = page_search(vpage);
-    victim_p->f = NULL;
-    victim_p->valid = 0;
+    //victim_p->f = NULL;
+    //victim_p->valid = 0;
 
     // victim_frame -> disk
     swap_write(victim_f);
     
     // free frame and clear page table
-    palloc_free_page(ppage);
     pagedir_clear_page(thread_current()->pagedir, victim_f->vpage);
+    palloc_free_page(ppage);
 
     // free frame
     free(victim_f);

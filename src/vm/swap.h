@@ -22,5 +22,6 @@ void swap_init();
 struct frame * swap_read(uint8_t *vpage);
 void swap_write(struct frame *f);
 struct swap * swap_search(uint8_t* vpage, int tid);
+void thread_exit_free_swaps();
 
 #endif

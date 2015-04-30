@@ -39,6 +39,7 @@ struct frame * swap_read(uint8_t *vpage)
     struct thread *t = thread_current();
     
     uint8_t* ppage = palloc_evict_if_necessary(PAL_USER | PAL_ZERO);
+    //printf("3. swap in] %p -> %p\n", vpage, ppage);
 
     struct swap *s;
     s = swap_search(vpage, t->tid);
@@ -50,6 +51,7 @@ struct frame * swap_read(uint8_t *vpage)
     }
     bitmap_set_multiple(swap_bitmap, s->sector, PGSIZE/DISK_SECTOR_SIZE, false);
 
+    free(s);
     hash_delete(&swap_table, &s->h_elem);
 
     struct frame *f = malloc(sizeof(struct frame));
@@ -63,6 +65,8 @@ struct frame * swap_read(uint8_t *vpage)
 
 void swap_write(struct frame *f)
 {
+//    printf("2. swap out] %p -> %p\n", f->vpage, f->ppage);
+
     size_t start = bitmap_scan_and_flip(swap_bitmap, 0, PGSIZE/DISK_SECTOR_SIZE, false);
 
     struct swap *s = malloc(sizeof(struct swap));
@@ -76,6 +80,27 @@ void swap_write(struct frame *f)
     {
         disk_write(disk_get(1, 1), start + count, f->ppage + count * DISK_SECTOR_SIZE);
         count++;
+    }
+}
+
+void thread_exit_free_swaps()
+{
+    return;
+    struct thread * t = thread_current();
+    int tid = t->tid;
+    struct swap *s;
+    struct hash_iterator i;
+
+    if(hash_empty(&swap_table))
+        return;
+
+    hash_first(&i, &swap_table);
+
+    while(hash_next(&i)) {
+        s = hash_entry(hash_cur(&i), struct swap, h_elem);
+        hash_delete(&swap_table, &s->h_elem);
+        hash_first(&i, &swap_table);
+
     }
 }
 

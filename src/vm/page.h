@@ -17,5 +17,6 @@ struct page
 
 void page_table_init(struct hash * page_table);
 struct page * page_search(uint8_t *vpage);
+void thread_exit_free_pages();
 
 #endif

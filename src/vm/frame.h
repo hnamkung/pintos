@@ -20,8 +20,7 @@ struct frame
 void frame_table_init();
 uint8_t* frame_alloc(uint8_t* vpage, enum palloc_flags flag);
 uint8_t* palloc_evict_if_necessary(enum palloc_flags flag);
-void frame_free(void* ppage);
-struct frame * frame_search(uint8_t* vpage);
+void thread_exit_free_frames();
 
 // private functions
 void evict_frame();

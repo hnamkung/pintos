@@ -305,6 +305,12 @@ process_exit (void)
     /* Destroy the current process's page directory and switch back
        to the kernel-only page directory. */
 
+    old_level = intr_disable();
+    /* project 3 free page table and frames */
+    thread_exit_free_pages();
+    thread_exit_free_frames();
+    thread_exit_free_swaps();
+
     pd = t->pagedir;
     if (pd != NULL) 
     {
@@ -319,6 +325,7 @@ process_exit (void)
         pagedir_activate (NULL);
         pagedir_destroy (pd);
     }
+    intr_set_level(old_level);
 }
 
 /* Sets up the CPU for running user code in the current

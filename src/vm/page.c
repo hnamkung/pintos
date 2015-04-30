@@ -32,4 +32,25 @@ struct page * page_search(uint8_t *vpage)
     return hash_entry(e, struct page, h_elem);
 }
 
+void thread_exit_free_pages()
+{
+    struct thread * t = thread_current();
+    int tid = t->tid;
+    struct hash page_table = t->page_table;
+    struct page *p;
+    struct hash_iterator i;
+      
+
+    if(hash_empty(&page_table))
+        return;
+
+    hash_first(&i, &page_table);
+
+    while(hash_next(&i)) {
+        p = hash_entry(hash_cur(&i), struct page, h_elem);
+        hash_delete(&page_table, &p->h_elem);
+        hash_first(&i, &page_table);
+        free(p);
+    }
+}
 
