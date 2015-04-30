@@ -74,6 +74,7 @@ void evict_frame()
     palloc_free_page(ppage);
 
     // free frame
+    list_remove(&victim_f->l_elem);
     free(victim_f);
 }
 

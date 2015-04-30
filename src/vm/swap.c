@@ -51,8 +51,8 @@ struct frame * swap_read(uint8_t *vpage)
     }
     bitmap_set_multiple(swap_bitmap, s->sector, PGSIZE/DISK_SECTOR_SIZE, false);
 
-    free(s);
     hash_delete(&swap_table, &s->h_elem);
+    free(s);
 
     struct frame *f = malloc(sizeof(struct frame));
     f->tid = t->tid;
