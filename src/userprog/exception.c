@@ -151,7 +151,10 @@ page_fault (struct intr_frame *f)
     write = (f->error_code & PF_W) != 0;
     user = (f->error_code & PF_U) != 0;
 
-
+    if(not_present == false) {
+        *(int *)(f->esp + 4) = -1;
+        syscall_exit(f);
+    }
     /* project 3 */
     //printf("%d] fault_addr : %p\n\n", thread_current()->tid, fault_addr);
 
