@@ -46,10 +46,9 @@ struct frame * swap_read(uint8_t *vpage)
     s = swap_search(vpage, t->tid);
     //printf("swap : %p\n\n", s);
 
-    int count =0;
-    while(count < PGSIZE / DISK_SECTOR_SIZE) {
+    int count;
+    for(count=0; count<(PGSIZE/DISK_SECTOR_SIZE); count++) {
         disk_read(disk_get(1,1), s->sector + count, ppage + count * DISK_SECTOR_SIZE);
-        count++;
     }
     bitmap_set_multiple(swap_bitmap, s->sector, PGSIZE/DISK_SECTOR_SIZE, false);
 
@@ -70,21 +69,19 @@ void swap_write(struct frame *f)
 {
     //printf("%d] 2. swap out] %p -> %p\n", thread_current()->tid, f->vpage, f->ppage);
 
-    size_t start = bitmap_scan_and_flip(swap_bitmap, 0, PGSIZE/DISK_SECTOR_SIZE, false);
-    if(start == BITMAP_ERROR)
+    size_t sector = bitmap_scan_and_flip(swap_bitmap, 0, PGSIZE/DISK_SECTOR_SIZE, false);
+    if(sector == BITMAP_ERROR)
         ASSERT(false);
 
     struct swap *s = malloc(sizeof(struct swap));
     s->tid = f->tid;
     s->vpage = f->vpage;
-    s->sector = start;
+    s->sector = sector;
     hash_insert(&swap_table, &s->h_elem); 
 
-    int count = 0;
-    while(count < PGSIZE / DISK_SECTOR_SIZE)
-    {
-        disk_write(disk_get(1, 1), start + count, f->ppage + count * DISK_SECTOR_SIZE);
-        count++;
+    int count;
+    for(count=0; count<(PGSIZE/DISK_SECTOR_SIZE); count++) {
+        disk_write(disk_get(1, 1), sector + count, f->ppage + count * DISK_SECTOR_SIZE);
     }
 }
 
