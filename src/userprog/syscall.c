@@ -35,6 +35,7 @@ static void syscall_close(struct intr_frame *f);
 syscall_init (void) 
 {
     intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+    lock_init(&file_lock);
 }
 
 struct file* search_file(int fd)
@@ -164,13 +165,17 @@ static void syscall_create(struct intr_frame *f)
 
     check_valid_addr(f, name);
 
+    lock_acquire(&file_lock);
     f->eax = filesys_create(name, size);
+    lock_release(&file_lock);
 }
 
 static void syscall_remove(struct intr_frame *f)
 {
     char *name = *(char **)(f->esp+4);
+    lock_acquire(&file_lock);
     f->eax = filesys_remove(name);
+    lock_release(&file_lock);
 }
 
 static void syscall_open(struct intr_frame *f)
@@ -181,7 +186,9 @@ static void syscall_open(struct intr_frame *f)
 
     check_valid_addr(f, name);
 
+    lock_acquire(&file_lock);
     file = filesys_open(name);
+    lock_release(&file_lock);
 
     if(file == NULL) {
         f->eax = -1;
@@ -204,7 +211,9 @@ static void syscall_filesize(struct intr_frame *f)
     if(file == NULL) {
         return;
     }
+    lock_acquire(&file_lock);
     f->eax = file_length(file);
+    lock_release(&file_lock);
 }
 
 static void syscall_read(struct intr_frame *f)
@@ -224,7 +233,9 @@ static void syscall_read(struct intr_frame *f)
             f->eax = -1;
             return;
         }
+        lock_acquire(&file_lock);
         f->eax = file_read(file, buffer, size); 
+        lock_release(&file_lock);
     }
 }
 
@@ -243,7 +254,10 @@ static void syscall_write(struct intr_frame *f)
     struct file *file = search_file(fd);
     if(file == NULL)
         return;
+
+    lock_acquire(&file_lock);
     f->eax = file_write(file, buffer, size);
+    lock_release(&file_lock);
 }
 
 
@@ -254,7 +268,9 @@ static void syscall_seek(struct intr_frame *f)
     struct file *file = search_file(fd); 
     if(file == NULL)
         return;
+    lock_acquire(&file_lock);
     file_seek(file, position);
+    lock_release(&file_lock);
     return;
 }
 
@@ -264,7 +280,9 @@ static void syscall_tell(struct intr_frame *f)
     struct file *file = search_file(fd); 
     if(file == NULL)
         return;
+    lock_acquire(&file_lock);
     f->eax = file_tell(file);
+    lock_release(&file_lock);
 }
 
 static void syscall_close(struct intr_frame *f)
