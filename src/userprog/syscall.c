@@ -142,6 +142,11 @@ static void syscall_exec(struct intr_frame *f)
 
     check_valid_addr(f, cmd_line);
 
+    if(pagedir_get_page(thread_current()->pagedir, cmd_line) == NULL) {
+        *(int *)(f->esp+4) = -1;
+        syscall_exit(f);
+    }
+
     f->eax = process_execute(cmd_line);
 }
 
