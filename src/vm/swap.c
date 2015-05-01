@@ -50,6 +50,7 @@ struct frame * swap_read(uint8_t *vpage)
     for(count=0; count<(PGSIZE/DISK_SECTOR_SIZE); count++) {
         disk_read(disk_get(1,1), s->sector + count, ppage + count * DISK_SECTOR_SIZE);
     }
+
     bitmap_set_multiple(swap_bitmap, s->sector, PGSIZE/DISK_SECTOR_SIZE, false);
 
     hash_delete(&swap_table, &s->h_elem);
