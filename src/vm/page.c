@@ -21,6 +21,16 @@ void page_table_init(struct hash * page_table)
     hash_init(page_table, page_hash, page_less, NULL);
 }
 
+struct page * page_alloc(uint8_t *vpage) 
+{
+    struct page *p = malloc(sizeof(struct page));  
+    struct thread *t = thread_current();
+    p->tid = t->tid;
+    p->vpage = vpage;
+    hash_insert(&t->page_table, &p->h_elem);
+
+    return p;
+}
 struct page * page_search(uint8_t *vpage)
 {
     struct thread *t = thread_current();

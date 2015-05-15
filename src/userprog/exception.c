@@ -171,6 +171,7 @@ page_fault (struct intr_frame *f)
         return;
     }
     if(fault_addr >= f->esp-32 && fault_addr < PHYS_BASE) {
+        struct page *p = page_alloc(vpage);
         uint8_t *ppage = frame_alloc(vpage, PAL_USER | PAL_ZERO);
         pagedir_set_page(t->pagedir, vpage, ppage, true);                    
         lock_release(&frame_lock);

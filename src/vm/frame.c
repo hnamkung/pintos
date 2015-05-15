@@ -21,13 +21,6 @@ uint8_t* frame_alloc(uint8_t* vpage, enum palloc_flags flag)
     f->pagedir = t->pagedir;
     list_push_back(&frame_table, &f->l_elem);
 
-    // set up page table
-    struct page *p = malloc(sizeof(struct page));  
-    p->tid = t->tid;
-    p->vpage = vpage;
-    hash_insert(&t->page_table, &p->h_elem);
-    
-
     return ppage;
 }
 uint8_t* palloc_evict_if_necessary(enum palloc_flags flag)
