@@ -31,6 +31,10 @@ static void syscall_seek(struct intr_frame *f);
 static void syscall_tell(struct intr_frame *f);
 static void syscall_close(struct intr_frame *f);
 
+static void syscall_mmap(struct intr_frame *f);
+static void syscall_munmap(struct intr_frame *f);
+
+
     void
 syscall_init (void) 
 {
@@ -113,6 +117,12 @@ syscall_handler (struct intr_frame *f UNUSED)
     }
     else if(SYS_NUM == SYS_CLOSE) {
         syscall_close(f);
+    }
+    else if(SYS_NUM == SYS_MMAP) {
+        syscall_mmap(f);
+    }
+    else if(SYS_NUM == SYS_MUNMAP) {
+        syscall_munmap(f);
     }
     else {
         thread_exit ();
@@ -293,5 +303,48 @@ static void syscall_close(struct intr_frame *f)
         return;
     struct thread *t = thread_current();
     t->fd_table[fd].fd = -1;
+}
+
+static void syscall_mmap(struct intr_frame *f)
+{
+    int fd = *(int *)(f->esp+4);
+    void *start_addr = *(void **)(f->esp+8);
+    struct file *file = search_file(fd);
+    off_t file_len = file_length(file);    
+
+    if(((uintptr_t)start_addr & PGMASK) != 0) {
+        printf("mmap page is not alighend\n\n");
+        ASSERT(false);
+        f->eax = -1;
+        return;
+    }
+   
+    void *addr = start_addr;
+    off_t offset = 0;
+    // check if there is any overlap
+    while(offset < file_len) {
+        if(page_search(start_addr + offset) != NULL) {
+            printf("mmap page overlap\n\n");
+            ASSERT(false);
+            f->eax = -1;
+            return;
+        }
+        offset += PGSIZE;
+    }
+
+    offset = 0;
+    while(offset < file_len) {
+        struct page *p = page_alloc(start_addr + offset); 
+        p->state = MMAP_NOT_LOADED;
+        p->file = file;
+        p->mmap_start_offset = offset;
+        offset += PGSIZE;
+        p->mmap_end_offset = offset > file_len ? file_len : offset;
+    }
+}
+
+static void syscall_munmap(struct intr_frame *f)
+{
+
 }
 

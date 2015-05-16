@@ -21,8 +21,8 @@ struct page
     enum page_state state;
 
     struct file* file;
-    int32_t  mmap_start; 
-    int32_t  mmap_offset; 
+    int32_t  mmap_start_offset; 
+    int32_t  mmap_end_offset; 
 
     uint8_t* ppage; 
     struct hash_elem h_elem;
