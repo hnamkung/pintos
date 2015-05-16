@@ -180,6 +180,11 @@ page_fault (struct intr_frame *f)
         } 
         // 2) page is mmaped, but no loaded
         else if(p->state == MMAP_NOT_LOADED) {
+            struct frame *f = mmap_read(p);
+            pagedir_set_page(t->pagedir, vpage, f->ppage, true);                    
+            p->state = MMAP_LOADED;
+            lock_release(&frame_lock);
+            return;
         }
     }
     

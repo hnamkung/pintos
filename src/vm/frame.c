@@ -61,15 +61,21 @@ void evict_frame()
     struct frame *victim_f = list_entry(list_pop_front(&frame_table), struct frame, l_elem);
 
     struct page *p = victim_f->p; 
-    //printf("state change vpage(%p) : %d\n", p->vpage, IN_SWAP_DISK);
-    p->state = IN_SWAP_DISK;
     uint8_t* vpage = victim_f->vpage;
     uint8_t* ppage = victim_f->ppage;
     uint32_t* pagedir = victim_f->pagedir;
 
-    // victim_frame -> disk
-    swap_write(victim_f);
-    
+    if(p->state == IN_PHYS_MEMORY) {
+        // victim_frame -> disk
+        p->state = IN_SWAP_DISK;
+        swap_write(victim_f);
+    }
+    else if(p->state == MMAP_LOADED) {
+        // victim_frame -> file
+        p->state = MMAP_NOT_LOADED;
+        file_seek(p->file, p->mmap_start_offset);
+        file_write(p->file, p->vpage, p->mmap_end_offset - p->mmap_start_offset);
+    }
     // free frame and clear page table
     pagedir_clear_page(pagedir, victim_f->vpage);
     palloc_free_page(ppage);
