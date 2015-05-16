@@ -6,17 +6,18 @@ void frame_table_init()
     lock_init(&frame_lock);
 }
 
-uint8_t* frame_alloc(uint8_t* vpage, enum palloc_flags flag)
+uint8_t* frame_alloc(struct page *p, enum palloc_flags flag)
 {
     uint8_t* ppage = palloc_evict_if_necessary(flag);
-    //printf("%d] 1. frame alloc] %p -> %p\n", thread_current()->tid, vpage, ppage);
+    //printf("%d] 1. frame alloc] %p -> %p\n", thread_current()->tid, p->vpage, ppage);
 
     struct thread *t = thread_current();
     
     // set up frame table
     struct frame *f = malloc(sizeof(struct frame));
     f->tid = t->tid;
-    f->vpage = vpage;
+    f->p = p;
+    f->vpage = p->vpage;
     f->ppage = ppage;
     f->pagedir = t->pagedir;
     list_push_back(&frame_table, &f->l_elem);
@@ -59,6 +60,9 @@ void evict_frame()
     // get victim_frame
     struct frame *victim_f = list_entry(list_pop_front(&frame_table), struct frame, l_elem);
 
+    struct page *p = victim_f->p; 
+    //printf("state change vpage(%p) : %d\n", p->vpage, IN_SWAP_DISK);
+    p->state = IN_SWAP_DISK;
     uint8_t* vpage = victim_f->vpage;
     uint8_t* ppage = victim_f->ppage;
     uint32_t* pagedir = victim_f->pagedir;

@@ -35,10 +35,11 @@ struct swap * swap_search(uint8_t* vpage, int tid)
 }
 
 // called from page fault, exception.c
-struct frame * swap_read(uint8_t *vpage)
+struct frame * swap_read(struct page *p)
 {
     struct thread *t = thread_current();
     
+    uint8_t* vpage = p->vpage;
     uint8_t* ppage = palloc_evict_if_necessary(PAL_USER | PAL_ZERO);
     //printf("%d] 3. swap in] %p -> %p\n", thread_current()->tid, vpage, ppage);
 
@@ -58,6 +59,7 @@ struct frame * swap_read(uint8_t *vpage)
 
     struct frame *f = malloc(sizeof(struct frame));
     f->tid = t->tid;
+    f->p = p;
     f->vpage = vpage;
     f->ppage = ppage;
     f->pagedir = t->pagedir;

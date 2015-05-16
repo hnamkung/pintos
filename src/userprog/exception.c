@@ -160,19 +160,34 @@ page_fault (struct intr_frame *f)
     }
 
     lock_acquire(&frame_lock);
+    // page fault - 3 cases
+    // 1) page is in swap disk
+    // 2) page is mmaped, but not loaded
+    // 3) stack grow
+
     struct thread *t = thread_current();
     uint8_t* vpage = pg_round_down(fault_addr);
     struct page *p = page_search(vpage);
 
-    if(p != NULL) { // swap outed page, swap in again
-        struct frame *f = swap_read(vpage);
-        pagedir_set_page(t->pagedir, vpage, f->ppage, true);                    
-        lock_release(&frame_lock);
-        return;
+    if(p != NULL) { 
+        // 1) page is in swap disk
+        if(p->state == IN_SWAP_DISK) {
+            struct frame *f = swap_read(p);
+            pagedir_set_page(t->pagedir, vpage, f->ppage, true);                    
+            p->state = IN_PHYS_MEMORY;
+            lock_release(&frame_lock);
+            return;
+        } 
+        // 2) page is mmaped, but no loaded
+        else if(p->state == MMAP_NOT_LOADED) {
+        }
     }
+    
+    // 3) stack grow
     if(fault_addr >= f->esp-32 && fault_addr < PHYS_BASE) {
         struct page *p = page_alloc(vpage);
-        uint8_t *ppage = frame_alloc(vpage, PAL_USER | PAL_ZERO);
+        p->state = IN_PHYS_MEMORY;
+        uint8_t *ppage = frame_alloc(p, PAL_USER | PAL_ZERO);
         pagedir_set_page(t->pagedir, vpage, ppage, true);                    
         lock_release(&frame_lock);
         return;

@@ -18,13 +18,13 @@ struct page
 {
     int tid;
     uint8_t* vpage;
-
     enum page_state state;
-    
-    uint8_t* ppage; // if IN_PHYS_MEMORY
-    // struct swap s; if IN_SWAP_DISK
-    // int sector? if IN_FILE_DISK
 
+    struct file* file;
+    int32_t  mmap_start; 
+    int32_t  mmap_offset; 
+
+    uint8_t* ppage; 
     struct hash_elem h_elem;
 };
 

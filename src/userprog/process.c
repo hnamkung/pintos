@@ -618,7 +618,8 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
         //uint8_t *kpage = palloc_get_page (PAL_USER);
         lock_acquire(&frame_lock);
         struct page *p = page_alloc(upage);
-        uint8_t *kpage = frame_alloc (upage, PAL_USER);
+        p->state = IN_PHYS_MEMORY;
+        uint8_t *kpage = frame_alloc (p, PAL_USER);
         if (kpage == NULL) {
             lock_release(&frame_lock);
             return false;
@@ -661,7 +662,9 @@ setup_stack (void **esp)
     lock_acquire(&frame_lock);
     uint8_t *vpage = ((uint8_t *) PHYS_BASE) - PGSIZE;
     struct page *p = page_alloc(vpage);
-    kpage = frame_alloc(vpage, PAL_USER | PAL_ZERO);
+    p->state = IN_PHYS_MEMORY;
+    kpage = frame_alloc(p, PAL_USER | PAL_ZERO);
+
     
     if (kpage != NULL) 
     {
