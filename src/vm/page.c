@@ -60,20 +60,14 @@ void thread_exit_free_pages()
 
     if(hash_empty(&page_table))
         return;
-
-    struct mmap *m;
-    struct list_elem *e;
-    for(e = list_begin(&t->mmap_table); e != list_end(&t->mmap_table); ) {
-        m = list_entry(e, struct mmap, l_elem);
-        mmap_munmap(m);
-        e = list_remove(e);
-        free(m);
-    }
-
+    
     hash_first(&i, &page_table);
 
     while(hash_next(&i)) {
         p = hash_entry(hash_cur(&i), struct page, h_elem);
+        if(p->state == MMAP_LOADED) {
+            mmap_write(p);
+        }
         hash_delete(&page_table, &p->h_elem);
         hash_first(&i, &page_table);
         free(p);

@@ -123,7 +123,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         syscall_mmap(f);
     }
     else if(SYS_NUM == SYS_MUNMAP) {
-        syscall_munmap(f);
+        //syscall_munmap(f);
     }
     else {
         thread_exit ();
@@ -315,8 +315,7 @@ static void syscall_mmap(struct intr_frame *f)
     struct thread * t = thread_current();
 
     if(((uintptr_t)start_addr & PGMASK) != 0) {
-        printf("mmap page is not alighend\n\n");
-        ASSERT(false);
+        // mmap page is not alighend
         f->eax = -1;
         return;
     }
@@ -326,8 +325,6 @@ static void syscall_mmap(struct intr_frame *f)
     // check if there is any overlap
     while(offset < file_len) {
         if(page_search(start_addr + offset) != NULL) {
-            printf("mmap page overlap\n\n");
-            ASSERT(false);
             f->eax = -1;
             return;
         }
@@ -365,18 +362,18 @@ static void syscall_munmap(struct intr_frame *f)
     struct list_elem *e;
 
     lock_acquire(&file_lock);
-    lock_acquire(&frame_lock);
     for(e = list_begin(&t->mmap_table); e != list_end(&t->mmap_table); ) {
         m = list_entry(e, struct mmap, l_elem);
         if(m->mmap_id == mmap_id) {
+            lock_acquire(&frame_lock);
             mmap_munmap(m);
+            lock_release(&frame_lock);
             e = list_remove(e);
             free(m);
         } else {
             e = list_next(e);
         }
     }
-    lock_release(&frame_lock);
     lock_release(&file_lock);
 }
 
