@@ -267,6 +267,27 @@ process_exit (void)
     struct zombie *z;
     int i;
 
+    /* project 3 free page table and frames */
+    if(!lock_held_by_current_thread(&file_lock)) {
+        lock_acquire(&file_lock);
+    }
+    thread_exit_free_pages();
+    struct mmap *m;
+    for(e = list_begin(&t->mmap_table); e != list_end(&t->mmap_table); e = list_next(e)) {
+        m = list_entry(e, struct mmap, l_elem);
+        file_close(m->file);
+    }
+    for(i=0; i<MAX_FD; i++) {
+        if(t->fd_table[i].fd != -1) {
+            file_close(t->fd_table[i].file);
+            t->fd_table[i].fd = -1;
+        }
+    }
+    if(t->exec_file != NULL) {
+        file_close(t->exec_file);
+    }
+    lock_release(&file_lock);
+    
     // disable interrupt start
     enum intr_level old_level = intr_disable();
     for(e = list_begin(child_list); e != list_end(child_list); e = list_next(e)) {
@@ -287,30 +308,8 @@ process_exit (void)
         free(z);
     }
 
-
     intr_set_level(old_level);
 
-    /* project 3 free page table and frames */
-    
-    if(!lock_held_by_current_thread(&file_lock)) {
-        lock_acquire(&file_lock);
-    }
-    thread_exit_free_pages();
-    struct mmap *m;
-    for(e = list_begin(&t->mmap_table); e != list_end(&t->mmap_table); e = list_next(e)) {
-        m = list_entry(e, struct mmap, l_elem);
-        file_close(m->file);
-    }
-    for(i=0; i<MAX_FD; i++) {
-        if(t->fd_table[i].fd != -1) {
-            file_close(t->fd_table[i].file);
-            t->fd_table[i].fd = -1;
-        }
-    }
-    if(t->exec_file != NULL) {
-        file_close(t->exec_file);
-    }
-    lock_release(&file_lock);
 
     if(t->parent != NULL)
         sema_up(&t->exit_sema);
