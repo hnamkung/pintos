@@ -311,9 +311,19 @@ static void syscall_mmap(struct intr_frame *f)
     int fd = *(int *)(f->esp+4);
     void *start_addr = *(void **)(f->esp+8);
     struct file *file = search_file(fd);
+    // mmap-bad-fd
+    if(file == NULL) {
+        f->eax = -1;
+        return;
+    }
     off_t file_len = file_length(file);    
     struct thread * t = thread_current();
 
+    // mmap-null
+    if(start_addr == 0) {
+        f->eax = -1;
+        return;
+    }
     if(((uintptr_t)start_addr & PGMASK) != 0) {
         // mmap page is not alighend
         f->eax = -1;
