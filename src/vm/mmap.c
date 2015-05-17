@@ -36,6 +36,8 @@ void mmap_write(struct page *p)
 {
     p->state = MMAP_NOT_LOADED;
     //printf("vpage(%p) start(%d) diff(%d) p->file(%p) \n\n", p->vpage, p->mmap_start_offset, p->mmap_end_offset - p->mmap_start_offset, p->file);
-    file_seek(p->file, p->mmap_start_offset);
-    file_write(p->file, p->vpage, p->mmap_end_offset - p->mmap_start_offset);
+    if(pagedir_is_dirty(thread_current()->pagedir, p->vpage)) {
+        file_seek(p->file, p->mmap_start_offset);
+        file_write(p->file, p->vpage, p->mmap_end_offset - p->mmap_start_offset);
+    }
 }
