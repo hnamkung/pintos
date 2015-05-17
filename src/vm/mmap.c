@@ -9,6 +9,8 @@ void mmap_table_init(struct list * mmap_table)
 // called from page fault, exception.c
 struct frame * mmap_read(struct page *p)
 {
+    p->state = MMAP_LOADED;
+
     struct thread *t = thread_current();
     
     uint8_t* vpage = p->vpage;
@@ -32,6 +34,8 @@ struct frame * mmap_read(struct page *p)
 
 void mmap_write(struct page *p)
 {
+    p->state = MMAP_NOT_LOADED;
+    //printf("vpage(%p) start(%d) diff(%d) p->file(%p) \n\n", p->vpage, p->mmap_start_offset, p->mmap_end_offset - p->mmap_start_offset, p->file);
     file_seek(p->file, p->mmap_start_offset);
     file_write(p->file, p->vpage, p->mmap_end_offset - p->mmap_start_offset);
 }

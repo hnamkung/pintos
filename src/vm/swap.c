@@ -9,6 +9,8 @@ void swap_init()
 // called from page fault, exception.c
 struct frame * swap_read(struct page *p)
 {
+    p->state = IN_PHYS_MEMORY;
+
     struct thread *t = thread_current();
     
     uint8_t* vpage = p->vpage;
@@ -35,6 +37,8 @@ struct frame * swap_read(struct page *p)
 
 void swap_write(struct frame *f)
 {
+    
+    f->p->state = IN_SWAP_DISK;
     //printf("%d] 2. swap out] %p -> %p\n", thread_current()->tid, f->vpage, f->ppage);
 
     size_t sector = bitmap_scan_and_flip(swap_bitmap, 0, PGSIZE/DISK_SECTOR_SIZE, false);

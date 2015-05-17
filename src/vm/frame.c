@@ -67,12 +67,11 @@ void evict_frame()
 
     if(p->state == IN_PHYS_MEMORY) {
         // victim_frame -> disk
-        p->state = IN_SWAP_DISK;
         swap_write(victim_f);
     }
     else if(p->state == MMAP_LOADED) {
         // victim_frame -> file
-        p->state = MMAP_NOT_LOADED;
+        //printf("2. evict loaded mmap\n");
         mmap_write(victim_f->p);
     }
     // free frame and clear page table
