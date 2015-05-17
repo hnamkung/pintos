@@ -73,8 +73,7 @@ void evict_frame()
     else if(p->state == MMAP_LOADED) {
         // victim_frame -> file
         p->state = MMAP_NOT_LOADED;
-        file_seek(p->file, p->mmap_start_offset);
-        file_write(p->file, p->vpage, p->mmap_end_offset - p->mmap_start_offset);
+        mmap_write(victim_f);
     }
     // free frame and clear page table
     pagedir_clear_page(pagedir, victim_f->vpage);

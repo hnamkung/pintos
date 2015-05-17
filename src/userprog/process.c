@@ -172,6 +172,8 @@ execute_thread (void *fn_copy)
 
     /* project 3 */
     page_table_init(&t->page_table);
+    t->next_mmap_id = 0;
+    mmap_table_init(&t->mmap_table);
 
     t->parent = parent;
     list_push_back(&parent->child_list, &t->child_elem);

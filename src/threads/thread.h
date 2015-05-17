@@ -8,6 +8,7 @@
 #include "userprog/syscall.h"
 #include "threads/synch.h"
 #include "vm/page.h"
+#include "vm/swap.h"
 #include <hash.h>
 
 /* States in a thread's life cycle. */
@@ -123,6 +124,9 @@ struct thread
 
     /* project 3 */
     struct hash page_table;
+
+    int next_mmap_id;
+    struct list mmap_table;
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */

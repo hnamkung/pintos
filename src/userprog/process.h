@@ -5,6 +5,7 @@
 #include "vm/frame.h"
 #include "vm/page.h"
 #include "vm/swap.h"
+#include "vm/mmap.h"
 
 #include <hash.h>
 
