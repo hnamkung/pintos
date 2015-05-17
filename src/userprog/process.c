@@ -291,33 +291,34 @@ process_exit (void)
     intr_set_level(old_level);
 
     /* project 3 free page table and frames */
-    lock_acquire(&frame_lock);
     
-        if(!lock_held_by_current_thread(&file_lock)) {
-            lock_acquire(&file_lock);
+    if(!lock_held_by_current_thread(&file_lock)) {
+        lock_acquire(&file_lock);
+    }
+    thread_exit_free_pages();
+    struct mmap *m;
+    for(e = list_begin(&t->mmap_table); e != list_end(&t->mmap_table); e = list_next(e)) {
+        m = list_entry(e, struct mmap, l_elem);
+        file_close(m->file);
+    }
+    for(i=0; i<MAX_FD; i++) {
+        if(t->fd_table[i].fd != -1) {
+            file_close(t->fd_table[i].file);
+            t->fd_table[i].fd = -1;
         }
-            thread_exit_free_pages();
-            struct mmap *m;
-            for(e = list_begin(&t->mmap_table); e != list_end(&t->mmap_table); e = list_next(e)) {
-                m = list_entry(e, struct mmap, l_elem);
-                file_close(m->file);
-            }
-            for(i=0; i<MAX_FD; i++) {
-                if(t->fd_table[i].fd != -1) {
-                    file_close(t->fd_table[i].file);
-                    t->fd_table[i].fd = -1;
-                }
-            }
-            if(t->exec_file != NULL) {
-                file_close(t->exec_file);
-            }
-            lock_release(&file_lock);
-        thread_exit_free_frames();
-    lock_release(&frame_lock);
+    }
+    if(t->exec_file != NULL) {
+        file_close(t->exec_file);
+    }
+    lock_release(&file_lock);
 
     if(t->parent != NULL)
         sema_up(&t->exit_sema);
     // disable interrupt done 
+
+    lock_acquire(&frame_lock);
+    thread_exit_free_frames();
+    lock_release(&frame_lock);
 
 
     /* Destroy the current process's page directory and switch back

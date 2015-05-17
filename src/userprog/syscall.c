@@ -354,14 +354,12 @@ static void syscall_mmap(struct intr_frame *f)
         p->mmap_end_offset = offset > file_len ? file_len : offset;
     }
 
-    lock_acquire(&file_lock);
     struct mmap *m = malloc(sizeof(struct mmap)); 
     t->next_mmap_id++;
     m->mmap_id = t->next_mmap_id;
     m->file = file;
     m->start_addr = start_addr;
     list_push_back(&t->mmap_table, &m->l_elem);
-    lock_release(&file_lock);
 
     f->eax = t->next_mmap_id; 
 }
@@ -374,15 +372,17 @@ static void syscall_munmap(struct intr_frame *f)
     struct mmap *m;
     struct list_elem *e;
 
-    lock_acquire(&file_lock);
     for(e = list_begin(&t->mmap_table); e != list_end(&t->mmap_table); ) {
         m = list_entry(e, struct mmap, l_elem);
         if(m->mmap_id == mmap_id) {
             munmap_f(m);
             e = list_remove(e);
+
+            lock_acquire(&file_lock);
             file_close(m->file);
-            free(m);
             lock_release(&file_lock);
+
+            free(m);
             return;
         }
         e = list_next(e);
@@ -408,7 +408,13 @@ void munmap_f(struct mmap * m)
             ASSERT(false);
         }
         if(p->state == MMAP_LOADED) {
+//            if(thread_current()->tid == 11)
+//                printf("2-1] mmap_write from munmap_f\n");
+
+            lock_acquire(&file_lock);
             mmap_write(p);
+            lock_release(&file_lock);
+
             pagedir_clear_page(t->pagedir, p->vpage);
         }
         page_free(p);

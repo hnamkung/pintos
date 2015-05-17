@@ -72,7 +72,11 @@ void evict_frame()
     else if(p->state == MMAP_LOADED) {
         // victim_frame -> file
         //printf("2. evict loaded mmap\n");
+       // if(thread_current()->tid == 11)
+       //     printf("2] mmap_write from evict_frame\n");
+        lock_acquire(&file_lock);
         mmap_write(victim_f->p);
+        lock_acquire(&file_lock);
     }
     // free frame and clear page table
     pagedir_clear_page(pagedir, victim_f->vpage);
