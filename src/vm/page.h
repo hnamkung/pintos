@@ -36,7 +36,7 @@ struct page
 void page_table_init(struct hash * page_table);
 struct page * page_alloc(uint8_t *vpage);
 struct page * page_search(uint8_t *vpage);
-struct page * page_free(struct page * p);
+void page_free(struct page * p);
 void thread_exit_free_pages();
 
 #endif

@@ -42,7 +42,7 @@ struct page * page_search(uint8_t *vpage)
     return hash_entry(e, struct page, h_elem);
 }
 
-struct page * page_free(struct page * p)
+void page_free(struct page * p)
 {
     struct thread * t = thread_current();
     hash_delete(&t->page_table, &p->h_elem);
