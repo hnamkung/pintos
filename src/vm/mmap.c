@@ -39,23 +39,3 @@ void mmap_write(struct page *p)
     file_seek(p->file, p->mmap_start_offset);
     file_write(p->file, p->vpage, p->mmap_end_offset - p->mmap_start_offset);
 }
-
-void mmap_munmap(struct mmap *m)
-{
-    struct file* file = m->file;
-    uint8_t* start_addr = m->start_addr;
-    off_t file_len = file_length(file);    
-    
-    off_t offset = 0;
-    while(offset < file_len) {
-        struct page *p = page_search(start_addr + offset); 
-        if(p == NULL) {
-            printf("should not happen!!\n\n");
-            ASSERT(false);
-        }
-        if(p->state == MMAP_LOADED) {
-            mmap_write(p);
-        }
-        page_free(p);
-    }
-}

@@ -366,7 +366,24 @@ static void syscall_munmap(struct intr_frame *f)
         m = list_entry(e, struct mmap, l_elem);
         if(m->mmap_id == mmap_id) {
             lock_acquire(&frame_lock);
-            mmap_munmap(m);
+            struct file* file = m->file;
+            uint8_t* start_addr = m->start_addr;
+            off_t file_len = file_length(file);    
+
+            off_t offset = 0;
+            while(offset < file_len) {
+                struct page *p = page_search(start_addr + offset); 
+                if(p == NULL) {
+                    printf("should not happen!!\n\n");
+                    ASSERT(false);
+                }
+                if(p->state == MMAP_LOADED) {
+                    //printf("1. syscall unmap\n");
+                    mmap_write(p);
+                    pagedir_clear_page(t->pagedir, p->vpage);
+                }
+                page_free(p);
+            }
             lock_release(&frame_lock);
             e = list_remove(e);
             free(m);
