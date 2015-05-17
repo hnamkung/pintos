@@ -21,6 +21,10 @@ struct page
     uint8_t* vpage;
     enum page_state state;
 
+    // for swapped page
+    disk_sector_t sector;
+   
+    // for mmaped page
     struct file* file;
     int32_t  mmap_start_offset; 
     int32_t  mmap_end_offset; 
