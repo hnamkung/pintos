@@ -123,7 +123,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         syscall_mmap(f);
     }
     else if(SYS_NUM == SYS_MUNMAP) {
-        //syscall_munmap(f);
+        syscall_munmap(f);
     }
     else {
         thread_exit ();
@@ -320,7 +320,6 @@ static void syscall_mmap(struct intr_frame *f)
         return;
     }
    
-    void *addr = start_addr;
     off_t offset = 0;
     // check if there is any overlap
     while(offset < file_len) {
@@ -330,6 +329,10 @@ static void syscall_mmap(struct intr_frame *f)
         }
         offset += PGSIZE;
     }
+
+    lock_acquire(&file_lock);
+    file = file_reopen(file);
+    lock_release(&file_lock);
 
     offset = 0;
     while(offset < file_len) {
@@ -365,35 +368,43 @@ static void syscall_munmap(struct intr_frame *f)
     for(e = list_begin(&t->mmap_table); e != list_end(&t->mmap_table); ) {
         m = list_entry(e, struct mmap, l_elem);
         if(m->mmap_id == mmap_id) {
-            lock_acquire(&frame_lock);
-            struct file* file = m->file;
-            uint8_t* start_addr = m->start_addr;
-            off_t file_len = file_length(file);    
-
-            off_t offset = 0;
-            while(offset < file_len) {
-                struct page *p = page_search(start_addr + offset); 
-                if(p == NULL) {
-                    printf("should not happen!!\n\n");
-                    ASSERT(false);
-                }
-                if(p->state == MMAP_LOADED) {
-                    //printf("1. syscall unmap\n");
-                    mmap_write(p);
-                    pagedir_clear_page(t->pagedir, p->vpage);
-                }
-                page_free(p);
-            }
-            lock_release(&frame_lock);
+            munmap_f(m);
             e = list_remove(e);
+            file_close(m->file);
             free(m);
-        } else {
-            e = list_next(e);
+            lock_release(&file_lock);
+            return;
         }
+        e = list_next(e);
     }
-    lock_release(&file_lock);
+    printf("handle this case!!\n\n");
+    ASSERT(false);
 }
 
+void munmap_f(struct mmap * m)
+{
+    lock_acquire(&frame_lock);
+    struct thread * t = thread_current();
+    struct file* file = m->file;
+    uint8_t* start_addr = m->start_addr;
+    off_t file_len = file_length(file);    
 
+    off_t offset = 0;
+    while(offset < file_len) {
+        //printf("page search : %p\n\n", start_addr + offset);
+        struct page *p = page_search(start_addr + offset); 
+        if(p == NULL) {
+            printf("should not happen!!\n\n");
+            ASSERT(false);
+        }
+        if(p->state == MMAP_LOADED) {
+            mmap_write(p);
+            pagedir_clear_page(t->pagedir, p->vpage);
+        }
+        page_free(p);
+        offset += PGSIZE;
+    }
+    lock_release(&frame_lock);
+}
 
 

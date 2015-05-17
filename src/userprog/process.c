@@ -287,17 +287,28 @@ process_exit (void)
         free(z);
     }
 
-    for(i=0; i<MAX_FD; i++) {
-        if(t->fd_table[i].fd != -1) {
-            file_close(t->fd_table[i].file);
-            t->fd_table[i].fd = -1;
-        }
-    }
-    if(t->exec_file != NULL) {
-        file_close(t->exec_file);
-    }
 
     intr_set_level(old_level);
+
+    /* project 3 free page table and frames */
+    lock_acquire(&frame_lock);
+    
+        if(!lock_held_by_current_thread(&file_lock)) {
+            lock_acquire(&file_lock);
+        }
+            thread_exit_free_pages();
+            for(i=0; i<MAX_FD; i++) {
+                if(t->fd_table[i].fd != -1) {
+                    file_close(t->fd_table[i].file);
+                    t->fd_table[i].fd = -1;
+                }
+            }
+            if(t->exec_file != NULL) {
+                file_close(t->exec_file);
+            }
+            lock_release(&file_lock);
+        thread_exit_free_frames();
+    lock_release(&frame_lock);
 
     if(t->parent != NULL)
         sema_up(&t->exit_sema);
@@ -306,12 +317,6 @@ process_exit (void)
 
     /* Destroy the current process's page directory and switch back
        to the kernel-only page directory. */
-
-    lock_acquire(&frame_lock);
-    /* project 3 free page table and frames */
-    thread_exit_free_pages();
-    thread_exit_free_frames();
-    thread_exit_free_swaps();
 
     pd = t->pagedir;
     if (pd != NULL) 
@@ -327,7 +332,6 @@ process_exit (void)
         pagedir_activate (NULL);
         pagedir_destroy (pd);
     }
-    lock_release(&frame_lock);
 }
 
 /* Sets up the CPU for running user code in the current

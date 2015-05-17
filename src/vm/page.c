@@ -23,6 +23,7 @@ void page_table_init(struct hash * page_table)
 
 struct page * page_alloc(uint8_t *vpage) 
 {
+//    printf("page alloc : %p\n\n", vpage);
     struct page *p = malloc(sizeof(struct page));  
     struct thread *t = thread_current();
     p->tid = t->tid;
