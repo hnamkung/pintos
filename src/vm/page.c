@@ -42,6 +42,14 @@ struct page * page_search(uint8_t *vpage)
     return hash_entry(e, struct page, h_elem);
 }
 
+struct page * page_free(struct page * p)
+{
+    struct thread * t = thread_current();
+    hash_delete(&t->page_table, &p->h_elem);
+    free(p);
+}
+
+
 void thread_exit_free_pages()
 {
     struct thread * t = thread_current();
@@ -52,6 +60,15 @@ void thread_exit_free_pages()
 
     if(hash_empty(&page_table))
         return;
+
+    struct mmap *m;
+    struct list_elem *e;
+    for(e = list_begin(&t->mmap_table); e != list_end(&t->mmap_table); ) {
+        m = list_entry(e, struct mmap, l_elem);
+        mmap_munmap(m);
+        e = list_remove(e);
+        free(m);
+    }
 
     hash_first(&i, &page_table);
 

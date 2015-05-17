@@ -73,7 +73,7 @@ void evict_frame()
     else if(p->state == MMAP_LOADED) {
         // victim_frame -> file
         p->state = MMAP_NOT_LOADED;
-        mmap_write(victim_f);
+        mmap_write(victim_f->p);
     }
     // free frame and clear page table
     pagedir_clear_page(pagedir, victim_f->vpage);

@@ -11,6 +11,7 @@
 #include "threads/init.h"
 #include "threads/vaddr.h"
 #include "vm/page.h"
+#include "vm/mmap.h"
 
 struct file* search_file(int fd);
 
@@ -311,6 +312,7 @@ static void syscall_mmap(struct intr_frame *f)
     void *start_addr = *(void **)(f->esp+8);
     struct file *file = search_file(fd);
     off_t file_len = file_length(file);    
+    struct thread * t = thread_current();
 
     if(((uintptr_t)start_addr & PGMASK) != 0) {
         printf("mmap page is not alighend\n\n");
@@ -341,10 +343,43 @@ static void syscall_mmap(struct intr_frame *f)
         offset += PGSIZE;
         p->mmap_end_offset = offset > file_len ? file_len : offset;
     }
+
+    lock_acquire(&file_lock);
+    struct mmap *m = malloc(sizeof(struct mmap)); 
+    t->next_mmap_id++;
+    m->mmap_id = t->next_mmap_id;
+    m->file = file;
+    m->start_addr = start_addr;
+    list_push_back(&t->mmap_table, &m->l_elem);
+    lock_release(&file_lock);
+
+    f->eax = t->next_mmap_id; 
 }
 
 static void syscall_munmap(struct intr_frame *f)
 {
+    int mmap_id = *(int *)(f->esp+4);
 
+    struct thread * t = thread_current();
+    struct mmap *m;
+    struct list_elem *e;
+
+    lock_acquire(&file_lock);
+    lock_acquire(&frame_lock);
+    for(e = list_begin(&t->mmap_table); e != list_end(&t->mmap_table); ) {
+        m = list_entry(e, struct mmap, l_elem);
+        if(m->mmap_id == mmap_id) {
+            mmap_munmap(m);
+            e = list_remove(e);
+            free(m);
+        } else {
+            e = list_next(e);
+        }
+    }
+    lock_release(&frame_lock);
+    lock_release(&file_lock);
 }
+
+
+
 

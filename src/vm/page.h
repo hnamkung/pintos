@@ -3,6 +3,7 @@
 
 #include "threads/palloc.h"
 #include "vm/frame.h"
+#include "vm/mmap.h"
 #include <hash.h>
 #include "lib/kernel/hash.h"
 
@@ -31,6 +32,7 @@ struct page
 void page_table_init(struct hash * page_table);
 struct page * page_alloc(uint8_t *vpage);
 struct page * page_search(uint8_t *vpage);
+struct page * page_free(struct page * p);
 void thread_exit_free_pages();
 
 #endif
