@@ -297,6 +297,11 @@ process_exit (void)
             lock_acquire(&file_lock);
         }
             thread_exit_free_pages();
+            struct mmap *m;
+            for(e = list_begin(&t->mmap_table); e != list_end(&t->mmap_table); e = list_next(e)) {
+                m = list_entry(e, struct mmap, l_elem);
+                file_close(m->file);
+            }
             for(i=0; i<MAX_FD; i++) {
                 if(t->fd_table[i].fd != -1) {
                     file_close(t->fd_table[i].file);
