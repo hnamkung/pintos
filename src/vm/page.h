@@ -6,6 +6,7 @@
 #include "vm/mmap.h"
 #include <hash.h>
 #include "lib/kernel/hash.h"
+#include "threads/malloc.h"
 
 enum page_state
 {
@@ -37,6 +38,6 @@ void page_table_init(struct hash * page_table);
 struct page * page_alloc(uint8_t *vpage);
 struct page * page_search(uint8_t *vpage);
 void page_free(struct page * p);
-void thread_exit_free_pages();
+void thread_exit_free_pages(void);
 
 #endif

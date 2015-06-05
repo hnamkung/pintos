@@ -42,8 +42,9 @@ void swap_write(struct frame *f)
     //printf("%d] 2. swap out] %p -> %p\n", thread_current()->tid, f->vpage, f->ppage);
 
     size_t sector = bitmap_scan_and_flip(swap_bitmap, 0, PGSIZE/DISK_SECTOR_SIZE, false);
-    if(sector == BITMAP_ERROR)
+    if(sector == BITMAP_ERROR) {
         ASSERT(false);
+    }
 
     f->p->sector = sector;
 

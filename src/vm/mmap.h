@@ -5,6 +5,11 @@
 #include "threads/palloc.h"
 #include "devices/disk.h"
 #include "vm/frame.h"
+#include "threads/malloc.h"
+#include "userprog/pagedir.h"
+#include <string.h>
+
+struct page;
 
 struct list mmap_table;
 

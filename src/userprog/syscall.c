@@ -12,6 +12,7 @@
 #include "threads/vaddr.h"
 #include "vm/page.h"
 #include "vm/mmap.h"
+#include "threads/malloc.h"
 
 struct file* search_file(int fd);
 
@@ -19,7 +20,7 @@ void check_valid_addr(struct intr_frame *f, void *addr);
 
 static void syscall_handler (struct intr_frame *);
 
-static void syscall_halt(struct intr_frame *f);
+static void syscall_halt(void);
 static void syscall_exec(struct intr_frame *f);
 static void syscall_wait(struct intr_frame *f);
 static void syscall_create(struct intr_frame *f);
@@ -56,7 +57,7 @@ struct file* search_file(int fd)
 
 void check_valid_addr(struct intr_frame *f, void *addr)
 {
-    struct thread *t = thread_current();
+    //struct thread *t = thread_current();
     if(is_kernel_vaddr(addr) || addr == NULL) {
         *(int *)(f->esp+4) = -1;
         syscall_exit(f);
@@ -81,7 +82,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         syscall_write(f);
     }
     else if(SYS_NUM == SYS_HALT) {
-        syscall_halt(f);
+        syscall_halt();
     }
     else if(SYS_NUM == SYS_EXIT) {
         syscall_exit(f);
@@ -143,7 +144,7 @@ void syscall_exit(struct intr_frame *f)
     thread_exit();
 }
 
-static void syscall_halt(struct intr_frame *f)
+static void syscall_halt()
 {
     power_off();
 }
@@ -236,7 +237,7 @@ static void syscall_read(struct intr_frame *f)
     check_valid_addr(f, buffer);
 
     if(fd == 0) {
-        f->eax = input_getc(); 
+        //f->eax = input_getc(); 
     }
     else {
         struct file *file = search_file(fd); 

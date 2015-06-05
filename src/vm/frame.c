@@ -56,12 +56,12 @@ void thread_exit_free_frames()
 // private functions
 void evict_frame()
 {
-    struct thread *t = thread_current();
+    //struct thread *t = thread_current();
     // get victim_frame
     struct frame *victim_f = list_entry(list_pop_front(&frame_table), struct frame, l_elem);
 
     struct page *p = victim_f->p; 
-    uint8_t* vpage = victim_f->vpage;
+    //uint8_t* vpage = victim_f->vpage;
     uint8_t* ppage = victim_f->ppage;
     uint32_t* pagedir = victim_f->pagedir;
 

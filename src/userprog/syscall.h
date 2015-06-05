@@ -1,6 +1,9 @@
 #ifndef USERPROG_SYSCALL_H
 #define USERPROG_SYSCALL_H
 
+struct intr_frame;
+struct mmap;
+
 void syscall_init (void);
 void syscall_exit(struct intr_frame *f);
 void munmap_f(struct mmap * m);

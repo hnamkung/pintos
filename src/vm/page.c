@@ -1,5 +1,8 @@
 #include "vm/page.h"
 
+unsigned page_hash(const struct hash_elem *e, void *aux);
+bool page_less(const struct hash_elem *aa, const struct hash_elem *bb, void *aux);
+
 unsigned page_hash(const struct hash_elem *e, void *aux)
 {
     const struct page *p = hash_entry(e, struct page, h_elem);
@@ -39,7 +42,7 @@ struct page * page_search(uint8_t *vpage)
     temp_page.vpage = vpage;
     struct hash_elem *e = hash_find(&t->page_table, &temp_page.h_elem);
     if(e == NULL)
-        return e;
+        return NULL;
     return hash_entry(e, struct page, h_elem);
 }
 
@@ -54,7 +57,7 @@ void page_free(struct page * p)
 void thread_exit_free_pages()
 {
     struct thread * t = thread_current();
-    int tid = t->tid;
+    //int tid = t->tid;
     struct hash page_table = t->page_table;
     struct page *p;
     struct hash_iterator i;
