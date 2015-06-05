@@ -6,3 +6,4 @@ cscope.*
 src/examples
 src/userprog/build
 src/vm/build
+src/filesys/build
