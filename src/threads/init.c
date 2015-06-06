@@ -33,6 +33,7 @@
 #include "devices/disk.h"
 #include "filesys/filesys.h"
 #include "filesys/fsutil.h"
+#include "filesys/cache.h"
 #endif
 
 /* Amount of physical memory, in 4 kB pages. */
@@ -112,13 +113,18 @@ main (void)
 
 #ifdef FILESYS
     /* Initialize file system. */
+    
+    // project 4
+
     disk_init ();
     filesys_init (format_filesys);
 #endif
     
+#ifdef VM
     // project 3
     frame_table_init();
     swap_init();
+#endif
 
     printf ("Boot complete.\n");
 
@@ -371,6 +377,7 @@ power_off (void)
     const char *p;
 
 #ifdef FILESYS
+    //intr_enable();
     filesys_done ();
 #endif
 

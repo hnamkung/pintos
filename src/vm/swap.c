@@ -2,8 +2,10 @@
 
 void swap_init()
 {
-    swap_bitmap = bitmap_create(disk_size(disk_get(1, 1)));
-    bitmap_set_all(swap_bitmap, false);
+    if(disk_get(1, 1) != NULL) {
+        swap_bitmap = bitmap_create(disk_size(disk_get(1, 1)));
+        bitmap_set_all(swap_bitmap, false);
+    }
 }
 
 // called from page fault, exception.c
