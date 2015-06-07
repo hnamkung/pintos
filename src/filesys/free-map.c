@@ -36,6 +36,10 @@ free_map_allocate (size_t cnt, disk_sector_t *sectorp)
     }
     if (sector != BITMAP_ERROR)
         *sectorp = sector;
+    if(sector == BITMAP_ERROR) {
+        printf("\n\n\n file disk is full \n\n\n");
+        ASSERT(false);
+    }
     return sector != BITMAP_ERROR;
 }
 

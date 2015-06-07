@@ -171,6 +171,11 @@ calloc (size_t a, size_t b)
   if (p != NULL)
     memset (p, 0, size);
 
+  if(p == NULL) {
+      printf("\n\n calloc fail \n\n");
+      ASSERT(false);
+  }
+
   return p;
 }
 

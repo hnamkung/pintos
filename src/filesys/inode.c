@@ -10,15 +10,41 @@
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
 
+#define DIRECT_COUNT 10
+#define SINGLE_INDIRECT_COUNT 2
+#define DOUBLE_INDIRECT_COUNT 2
+#define UNUSED (128 - 3 - DIRECT_COUNT - SINGLE_INDIRECT_COUNT - DOUBLE_INDIRECT_COUNT)
+#define INDIRECT_COUNT 127
+
+static char zeros[DISK_SECTOR_SIZE];
+
 /* On-disk inode.
    Must be exactly DISK_SECTOR_SIZE bytes long. */
 struct inode_disk
 {
-    disk_sector_t start;                /* First data sector. */
-    off_t length;                       /* File size in bytes. */
+    disk_sector_t sec_no;
+
+    off_t length;
+
+    disk_sector_t direct_list[DIRECT_COUNT];
+    disk_sector_t single_list[SINGLE_INDIRECT_COUNT];
+    disk_sector_t double_list[DOUBLE_INDIRECT_COUNT];
+
     unsigned magic;                     /* Magic number. */
-    uint32_t unused[125];               /* Not used. */
+    uint32_t unused[UNUSED];               /* Not used. */
 };
+
+struct single_disk
+{
+    disk_sector_t sec_no;
+    disk_sector_t direct_list[INDIRECT_COUNT];
+}
+
+struct double_disk
+{
+    disk_sector_t sec_no;
+    disk_sector_t single_list[INDIRECT_COUNT];
+}
 
 /* Returns the number of sectors to allocate for an inode SIZE
    bytes long. */
@@ -72,37 +98,74 @@ inode_init (void)
     bool
 inode_create (disk_sector_t sector, off_t length)
 {
-    struct inode_disk *disk_inode = NULL;
-    bool success = false;
-
     ASSERT (length >= 0);
 
     /* If this assertion fails, the inode structure is not exactly
        one sector in size, and you should fix that. */
-    ASSERT (sizeof *disk_inode == DISK_SECTOR_SIZE);
+    ASSERT (sizeof(struct inode_disk)  == DISK_SECTOR_SIZE);
+    ASSERT (sizeof(struct single_disk)  == DISK_SECTOR_SIZE);
+    ASSERT (sizeof(struct double_disk)  == DISK_SECTOR_SIZE);
 
+    size_t sectors = bytes_to_sectors (length);
+    bool success = false;
+
+    struct inode_disk *disk_inode = NULL;
     disk_inode = calloc (1, sizeof *disk_inode);
-    if (disk_inode != NULL)
-    {
-        size_t sectors = bytes_to_sectors (length);
-        disk_inode->length = length;
-        disk_inode->magic = INODE_MAGIC;
-        if (free_map_allocate (sectors, &disk_inode->start))
-        {
-            cache_write(sector, disk_inode);
-            if (sectors > 0) 
-            {
-                static char zeros[DISK_SECTOR_SIZE];
-                size_t i;
+    disk_inode->sec_no = sector;
+    disk_inode->length = length;
+    disk_inode->magic = INODE_MAGIC;
 
-                for (i = 0; i < sectors; i++) {
-                    cache_write (disk_inode->start + i, zeros); 
-                }
-            }
-            success = true; 
-        } 
-        free (disk_inode);
+    int i, j, k;
+    for(i=0; i<DIRECT_COUNT && sectors != 0; i++) {
+        sectors--;
+        free_map_allocate(1, &disk_inode->direct_list[i]);
+        cache_write(disk_inode->direct_list[i], zeros);
     }
+
+    for(j=0; j<SINGLE_INDIRECT_COUNT && sectors != 0; j++) {
+        struct single_disk *disk_single;
+        free_map_allocate(1, &disk_single->sec_no);
+        disk_single = calloc(1, sizeof *disk_single);
+
+        for(i=0; i<INDIRECT_COUNT && sectors != 0; i++) {
+            sectors--;
+            free_map_allocate(1, &disk_single->direct_list[i]);
+            cache_write(disk_single->direct_list[i], zeros);
+        }
+
+        cache_write(disk_single->sec_no, disk_single);
+        disk_inode->single_list[j] = disk_single->sec_no;
+        free(disk_single);
+    }
+
+    for(k=0; k<DOUBLE_INDIRECT_COUNT && sectors != 0; k++) {
+        struct double_disk *disk_double;
+        free_map_allocate(1, &disk_double->sec_no);
+        disk_double = calloc(1, sizeof *disk_double);
+
+        for(j=0; j<INDIRECT_COUNT && sectors != 0; j++) {
+            struct single_disk *disk_single;
+            free_map_allocate(1, &disk_single->sec_no);
+            disk_single = calloc(1, sizeof *disk_single);
+
+            for(i=0; i<INDIRECT_COUNT && sectors != 0; i++) {
+                sectors--;
+                free_map_allocate(1, &disk_single->direct_list[i]);
+                cache_write(disk_single->direct_list[i], zeros);
+            }
+            cache_write(disk_single->sec_no, disk_single);
+            disk_double->single_list[j] = disk_single->sec_no;
+            free(disk_single);
+        }
+
+        cache_write(disk_double->sec_no, disk_double);
+        disk_inode->double_list[k] = disk_double->sec_no;
+        free(disk_double);
+    }
+
+    cache_write(sector, disk_inode);
+    free (disk_inode);
+    success = true; 
     return success;
 }
 
