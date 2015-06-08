@@ -36,6 +36,11 @@ static void syscall_close(struct intr_frame *f);
 static void syscall_mmap(struct intr_frame *f);
 static void syscall_munmap(struct intr_frame *f);
 
+static void syscall_chdir(struct intr_frame *f);
+static void syscall_mkdir(struct intr_frame *f);
+static void syscall_readdir(struct intr_frame *f);
+static void syscall_isdir(struct intr_frame *f);
+static void syscall_inumber(struct intr_frame *f);
 
     void
 syscall_init (void) 
@@ -125,6 +130,21 @@ syscall_handler (struct intr_frame *f UNUSED)
     }
     else if(SYS_NUM == SYS_MUNMAP) {
         syscall_munmap(f);
+    }
+    else if(SYS_NUM == SYS_CHDIR) {
+        syscall_chdir(f);
+    }
+    else if(SYS_NUM == SYS_MKDIR) {
+        syscall_mkdir(f);
+    }
+    else if(SYS_NUM == SYS_READDIR) {
+        syscall_readdir(f);
+    }
+    else if(SYS_NUM == SYS_ISDIR) {
+        syscall_isdir(f);
+    }
+    else if(SYS_NUM == SYS_INUMBER) {
+        syscall_inumber(f);
     }
     else {
         thread_exit ();
@@ -424,4 +444,28 @@ void munmap_f(struct mmap * m)
     lock_release(&frame_lock);
 }
 
+static void syscall_chdir(struct intr_frame *f)
+{
+
+}
+
+static void syscall_mkdir(struct intr_frame *f)
+{
+
+}
+
+static void syscall_readdir(struct intr_frame *f)
+{
+
+}
+
+static void syscall_isdir(struct intr_frame *f)
+{
+
+}
+
+static void syscall_inumber(struct intr_frame *f)
+{
+
+}
 
