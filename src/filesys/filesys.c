@@ -8,6 +8,7 @@
 #include "filesys/directory.h"
 #include "devices/disk.h"
 #include "filesys/cache.h"
+#include "threads/thread.h"
 
 /* The disk that contains the file system. */
 struct disk *filesys_disk;
@@ -31,6 +32,8 @@ filesys_init (bool format)
         do_format ();
 
     free_map_open ();
+    struct thread * t = thread_current();
+    t->cur_dir = dir_open_root();
 }
 
 /* Shuts down the file system module, writing any unwritten data

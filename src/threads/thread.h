@@ -10,6 +10,7 @@
 #include "vm/page.h"
 #include "vm/swap.h"
 #include <hash.h>
+#include "filesys/directory.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -127,6 +128,8 @@ struct thread
 
     int next_mmap_id;
     struct list mmap_table;
+
+    struct dir * cur_dir;
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
