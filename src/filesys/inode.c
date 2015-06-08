@@ -93,7 +93,7 @@ inode_create (disk_sector_t sector, off_t length)
     bool success = false;
 
     struct inode_disk *disk_inode = calloc (1, sizeof *disk_inode);
-    disk_inode->length = -DISK_SECTOR_SIZE;
+    disk_inode->length = 0;
     disk_inode->magic = INODE_MAGIC;
     int i;
     for(i=0; i<DIRECT_COUNT; i++) {
@@ -273,7 +273,8 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size, off_t offs
     if(size == 0)
         return 0;
 
-    extend_file_if_necessary(&inode->data, offset + size - 1);
+    extend_file_if_necessary(&inode->data, offset + size);
+    
 
     while (size > 0) {
         int sector_ofs = offset % DISK_SECTOR_SIZE;
@@ -391,8 +392,8 @@ disk_sector_t get_sector(struct inode_disk *disk_inode, off_t ith_sector)
 
 void extend_file_if_necessary(struct inode_disk *disk_inode, off_t length)
 {
-    off_t origin_sectors = disk_inode->length / DISK_SECTOR_SIZE;
-    off_t new_sectors = length / DISK_SECTOR_SIZE;
+    off_t origin_sectors = disk_inode->length == 0 ? -1 : (disk_inode->length-1) / DISK_SECTOR_SIZE;
+    off_t new_sectors = length == 0 ? -1 : (length-1) / DISK_SECTOR_SIZE;
     
     if(origin_sectors >= new_sectors) {
         return;
