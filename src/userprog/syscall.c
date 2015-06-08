@@ -13,6 +13,7 @@
 #include "vm/page.h"
 #include "vm/mmap.h"
 #include "threads/malloc.h"
+#include "filesys/directory.h"
 
 struct file* search_file(int fd);
 
@@ -444,15 +445,24 @@ void munmap_f(struct mmap * m)
     lock_release(&frame_lock);
 }
 
-static void syscall_chdir(struct intr_frame *f)
-{
-
-}
-
 static void syscall_mkdir(struct intr_frame *f)
 {
+    char *path = *(char **)(f->esp+4);
 
+    lock_acquire(&file_lock);
+    f->eax = dir_mkdir(path);
+    lock_release(&file_lock);
 }
+
+static void syscall_chdir(struct intr_frame *f)
+{
+    char *path = *(char **)(f->esp+4);
+
+    lock_acquire(&file_lock);
+    f->eax = dir_chdir(path);
+    lock_release(&file_lock);
+}
+
 
 static void syscall_readdir(struct intr_frame *f)
 {
