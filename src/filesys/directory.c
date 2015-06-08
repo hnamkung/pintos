@@ -225,16 +225,22 @@ dir_readdir (struct dir *dir, char name[NAME_MAX + 1])
 
 void dir_upper_path_from_path(char* dir_upper, char* path)
 {
-    char *token, *ptr;
+    char *copy = malloc(sizeof(strlen(path)+1));
+    strlcpy(copy, path, strlen(path)+1);
 
-    strlcpy(dir_upper, path, strlen(path));
+    char *token, *ptr, *last_path;
 
-    token = strtok_r(path, "/", &ptr);
+    strlcpy(dir_upper, path, strlen(path)+1);
+
+    token = strtok_r(copy, "/", &ptr);
+    last_path = token;
     while(token) {
         token = strtok_r(NULL, "/", &ptr);
+        if(token != NULL)
+            last_path = token;
     }
 
-    int dir_upper_length = strlen(path) - strlen(token);
+    int dir_upper_length = strlen(path) - strlen(last_path);
     if(dir_upper_length == 0) {
         dir_upper[0] = 0;
     }
@@ -242,17 +248,25 @@ void dir_upper_path_from_path(char* dir_upper, char* path)
         // -1 for last '/' str
         dir_upper[dir_upper_length-1] = 0;
     }
+    free(copy);
 }
 
-void dir_name_from_path(char* dir_name, char*path)
+void dir_name_from_path(char *dir_name, char *path)
 {
-    char *token, *ptr;
-    token = strtok_r(path, "/", &ptr);
+    char *copy = malloc(sizeof(strlen(path)+1));
+    strlcpy(copy, path, strlen(path)+1);
+
+    char *token, *ptr, *last_path;
+    token = strtok_r(copy, "/", &ptr);
+    last_path = token;
     while(token) {
         token = strtok_r(NULL, "/", &ptr);
+        if(token != NULL)
+            last_path = token;
     }
 
-    strlcpy(dir_name, token, strlen(token));
+    strlcpy(dir_name, last_path, strlen(last_path)+1);
+    free(copy);
 }
 
 // from relative input path, return struct dir
