@@ -15,7 +15,7 @@
 #define SINGLE_INDIRECT_COUNT 10
 #define UNUSED (128 - 1 - DIRECT_COUNT - SINGLE_INDIRECT_COUNT - 2)
 #define INDIRECT_COUNT 128
-#define NOT_ALLOCATED 9999
+#define NOT_ALLOCATED 9999999
 
 static char zeros[DISK_SECTOR_SIZE];
 
@@ -93,7 +93,7 @@ inode_create (disk_sector_t sector, off_t length)
     bool success = false;
 
     struct inode_disk *disk_inode = calloc (1, sizeof *disk_inode);
-    disk_inode->length = -1;
+    disk_inode->length = -DISK_SECTOR_SIZE;
     disk_inode->magic = INODE_MAGIC;
     int i;
     for(i=0; i<DIRECT_COUNT; i++) {
@@ -215,10 +215,6 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 
     if(size == 0)
         return 0;
-
-    if(offset + size - 1 > inode_length(inode)) {
-        ASSERT(false);
-    }
 
     while (size > 0) 
     {
