@@ -395,6 +395,9 @@ void extend_file_if_necessary(struct inode_disk *disk_inode, off_t length)
     off_t origin_sectors = disk_inode->length == 0 ? -1 : (disk_inode->length-1) / DISK_SECTOR_SIZE;
     off_t new_sectors = length == 0 ? -1 : (length-1) / DISK_SECTOR_SIZE;
     
+    if(disk_inode->length < length)
+        disk_inode->length = length;
+
     if(origin_sectors >= new_sectors) {
         return;
     }
@@ -455,8 +458,6 @@ void extend_file_if_necessary(struct inode_disk *disk_inode, off_t length)
     }
 
     free(bounce);
-
-    disk_inode->length = length;
 }
 
 
