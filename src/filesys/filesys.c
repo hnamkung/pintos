@@ -91,7 +91,7 @@ filesys_open (char *name)
 
     struct inode *inode = NULL;
 
-    if(!dir_get_upper_and_name_from_path(&upper_dir, dir_name, name)) {
+    if(dir_get_upper_and_name_from_path(&upper_dir, dir_name, name)) {
         dir_lookup (&upper_dir, dir_name, &inode, false);
     }
 

@@ -346,9 +346,8 @@ bool dir_chdir(char* path)
     struct dir path_dir = dir_get_from_path(thread_current()->cur_dir, path);
     if(path_dir.inode == NULL)
         return false;
-    thread_current()->cur_dir = dir_open(inode_open(path_dir.inode));
+    thread_current()->cur_dir = dir_open(path_dir.inode);
     return true;
-
 }
 
 
