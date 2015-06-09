@@ -180,6 +180,7 @@ filesys_remove (char *path)
         char *upper_dir_path = malloc(sizeof(strlen(path)+1));
         dir_set_upper_path_from_path(upper_dir_path, path);
         upper = dir_get_sector_from_path(upper_dir_path);
+        free(upper_dir_path);
     }
     struct dir * upper_dir = dir_open(inode_open(upper));
     bool suc = dir_remove(upper_dir, now);
