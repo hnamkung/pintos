@@ -63,7 +63,7 @@ do_format (void)
     e.name[0] = '.'; e.name[1] = 0;
     e.is_dir = true;
     e.in_use = true;
-    if(!inode_write_at (inode, &e, sizeof e, inode_length(inode)) == sizeof e) {
+    if(inode_write_at (inode, &e, sizeof e, inode_length(inode)) != sizeof e) {
         printf("init fail - filesys.c 136\n\n");
         ASSERT(false);
     }
@@ -81,6 +81,8 @@ do_format (void)
     bool
 filesys_create (char *path, off_t initial_size) 
 {
+    if(strlen(path) == 0)
+        return false;
     disk_sector_t new_sector = 0;
     disk_sector_t upper_dir_sector = 0;
 
@@ -128,6 +130,8 @@ filesys_create (char *path, off_t initial_size)
     struct file *
 filesys_open (char *path)
 {
+    if(strlen(path) == 0)
+        return NULL;
     if(!dir_is_valid(path) || !dir_is_path_exist(path))
         return NULL;
     disk_sector_t sector = dir_get_sector_from_path(path);
@@ -148,6 +152,8 @@ filesys_open (char *path)
     bool
 filesys_remove (char *path) 
 {
+    if(strlen(path) == 0)
+        return false;
     if(!dir_is_valid(path) || !dir_is_path_exist(path))
         return false;
 

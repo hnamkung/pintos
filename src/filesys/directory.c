@@ -77,8 +77,12 @@ lookup (const struct dir *dir, const char *name,
     ASSERT (dir != NULL);
     ASSERT (name != NULL);
 
+//    printf("-----------------list--------------------\n");
     for (ofs = 0; inode_read_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
-            ofs += sizeof e) 
+            ofs += sizeof e)  {
+ //       if(e.in_use) {
+ //           printf("%s\n", e.name);
+ //       }
         if (e.is_dir == is_dir && e.in_use && !strcmp (name, e.name)) 
         {
             if (ep != NULL)
@@ -87,6 +91,8 @@ lookup (const struct dir *dir, const char *name,
                 *ofsp = ofs;
             return true;
         }
+    }
+ //   printf("---------------done-----------------\n");
     return false;
 }
 
@@ -166,7 +172,7 @@ dir_add (struct dir *dir, const char *name, disk_sector_t inode_sector, bool is_
     strlcpy (e.name, name, sizeof e.name);
     e.is_dir = is_dir;
     e.in_use = true;
-    if(!inode_write_at (dir->inode, &e, sizeof e, ofs) == sizeof e) {
+    if(inode_write_at (dir->inode, &e, sizeof e, ofs) != sizeof e) {
         return false;
     }
 
@@ -177,16 +183,16 @@ dir_add (struct dir *dir, const char *name, disk_sector_t inode_sector, bool is_
         e.name[0] = '.'; e.name[1] = 0;
         e.is_dir = true;
         e.in_use = true;
-        if(!inode_write_at (inode, &e, sizeof e, inode_length(inode)) == sizeof e) {
+        if(inode_write_at (inode, &e, sizeof e, inode_length(inode)) != sizeof e) {
             printf("write fail 1 - directory.c\n\n");
             ASSERT(false);
         }
 
         e.inode_sector = inode_get_inumber(dir->inode);
-        e.name[0] = '.'; e.name[1] = '.'; e.name[2] = '0';
+        e.name[0] = '.'; e.name[1] = '.'; e.name[2] = 0;
         e.is_dir = true;
         e.in_use = true;
-        if(!inode_write_at (inode, &e, sizeof e, inode_length(inode)) == sizeof e) {
+        if(inode_write_at (inode, &e, sizeof e, inode_length(inode)) != sizeof e) {
             printf("write fail 1 - directory.c\n\n");
             ASSERT(false);
         }
@@ -204,8 +210,10 @@ bool dir_remove (struct dir * dir, disk_sector_t sec)
 
     for (ofs = 0; inode_read_at (dir->inode, &e, sizeof e, ofs) == sizeof e; ofs += sizeof e) {
         if(e.in_use && e.inode_sector == sec) {
-            e.in_use = false;
-            if (!inode_write_at (dir->inode, &e, sizeof e, ofs) != sizeof e) {
+            struct dir_entry en;
+            en.in_use = false;
+
+            if (inode_write_at (dir->inode, &en, sizeof en, ofs) != sizeof en) {
                 ASSERT(false);
             }
             struct inode * inode = inode_open(e.inode_sector);
@@ -217,32 +225,13 @@ bool dir_remove (struct dir * dir, disk_sector_t sec)
     return false;
 }
 
-
-/* Reads the next directory entry in DIR and stores the name in
-   NAME.  Returns true if successful, false if the directory
-   contains no more entries. */
-    bool
-dir_readdir (struct dir *dir, char name[NAME_MAX + 1])
-{
-    struct dir_entry e;
-
-    while (inode_read_at (dir->inode, &e, sizeof e, dir->pos) == sizeof e) 
-    {
-        dir->pos += sizeof e;
-        if (e.in_use)
-        {
-            strlcpy (name, e.name, NAME_MAX + 1);
-            return true;
-        } 
-    }
-    return false;
-}
-
 /* project 4
  * sys call  */
 
 bool dir_mkdir(char* path)
 {
+    if(strlen(path) == 0)
+        return false;
     disk_sector_t new_sector = 0;
     disk_sector_t upper_dir_sector = 0;
 
@@ -283,15 +272,35 @@ bool dir_mkdir(char* path)
 
 bool dir_chdir(char* path)
 {
+    if(strlen(path) == 0)
+        return false;
     if(!dir_is_valid(path))
         return false;
+
     if(!dir_is_path_exist(path) || !dir_is_dir(path))
         return false;
     struct dir *old_dir = thread_current()->cur_dir;
-    dir_close(old_dir);
     disk_sector_t sector = dir_get_sector_from_path(path);
     thread_current()->cur_dir = dir_open(inode_open(sector));
+    dir_close(old_dir);
     return true;
+}
+
+bool dir_readdir(struct file * file, char* name)
+{
+    struct dir_entry e;
+
+    while (inode_read_at (file->inode, &e, sizeof e, file->pos) == sizeof e) 
+    {
+        file->pos += sizeof e;
+        if (e.in_use && strcmp(e.name, "..") && strcmp(e.name, "."))
+        {
+            strlcpy (name, e.name, NAME_MAX + 1);
+            return true;
+        } 
+    }
+    return false;
+
 }
 
 /* project 4
@@ -496,9 +505,11 @@ disk_sector_t dir_get_upper_sector_from_sector(disk_sector_t sec)
     char name[5];
     name[0] = '.'; name[1] = '.'; name[2] = 0;
     if (lookup (dir, name, &e, NULL, true)) {
+        dir_close(dir);
         return e.inode_sector;
     }
     else {
+        dir_close(dir);
         return -1;
     }
 }

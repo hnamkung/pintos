@@ -43,11 +43,11 @@ bool dir_lookup (const struct dir *dir, const char *name, struct inode **inode, 
 int dir_count (const struct dir *dir);
 bool dir_add (struct dir *dir, const char *name, disk_sector_t inode_sector, bool is_dir);
 bool dir_remove (struct dir *, disk_sector_t sec);
-bool dir_readdir (struct dir *, char name[NAME_MAX + 1]);
 
 /* project 4 syscall */
 bool dir_mkdir(char* path);
 bool dir_chdir(char* path);
+bool dir_readdir(struct file * file, char* name);
 
 /* helper function */
 // single component is zero or more than NAME_MAX

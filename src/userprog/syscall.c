@@ -14,6 +14,7 @@
 #include "vm/mmap.h"
 #include "threads/malloc.h"
 #include "filesys/directory.h"
+#include "filesys/inode.h"
 
 struct file* search_file(int fd);
 
@@ -466,16 +467,53 @@ static void syscall_chdir(struct intr_frame *f)
 
 static void syscall_readdir(struct intr_frame *f)
 {
-
+    int fd = *(int *)(f->esp+4);
+    char *name = *(char **)(f->esp+8);
+    
+    if(fd == 0) {
+        //f->eax = input_getc(); 
+    }
+    else {
+        struct file *file = search_file(fd); 
+        if(file == NULL) {
+            f->eax = -1;
+            return;
+        }
+        lock_acquire(&file_lock);
+        f->eax = dir_readdir(file, name);
+        lock_release(&file_lock);
+    }
 }
 
 static void syscall_isdir(struct intr_frame *f)
 {
-
+    int fd = *(int *)(f->esp+4);
+    if(fd == 0) {
+        //f->eax = input_getc(); 
+    }
+    else {
+        struct file *file = search_file(fd); 
+        if(file == NULL) {
+            f->eax = -1;
+            return;
+        }
+        f->eax = file->is_dir;
+    }
 }
 
 static void syscall_inumber(struct intr_frame *f)
 {
-
+    int fd = *(int *)(f->esp+4);
+    if(fd == 0) {
+        //f->eax = input_getc(); 
+    }
+    else {
+        struct file *file = search_file(fd); 
+        if(file == NULL) {
+            f->eax = -1;
+            return;
+        }
+        f->eax = file->inode->sector;
+    }
 }
 
