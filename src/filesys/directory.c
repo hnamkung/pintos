@@ -156,11 +156,33 @@ dir_add (struct dir *dir, const char *name, disk_sector_t inode_sector, bool is_
 
     /* Write slot. */
     struct dir_entry e;
-    e.in_use = true;
-    strlcpy (e.name, name, sizeof e.name);
     e.inode_sector = inode_sector;
+    strlcpy (e.name, name, sizeof e.name);
     e.is_dir = is_dir;
+    e.in_use = true;
     success = inode_write_at (dir->inode, &e, sizeof e, inode_length(dir->inode)) == sizeof e;
+
+    if(is_dir) {
+        struct inode * inode = inode_open(inode_sector);
+
+        e.inode_sector = inode_sector;
+        e.name[0] = '.'; e.name[1] = 0;
+        e.is_dir = true;
+        e.in_use = true;
+        if(!inode_write_at (inode, &e, sizeof e, inode_length(inode)) == sizeof e) {
+            printf("write fail 1 - directory.c\n\n");
+            ASSERT(false);
+        }
+
+        e.inode_sector = inode_get_inumber(dir->inode);
+        e.name[0] = '.'; e.name[1] = '.'; e.name[2] = '0';
+        e.is_dir = true;
+        e.in_use = true;
+        if(!inode_write_at (inode, &e, sizeof e, inode_length(inode)) == sizeof e) {
+            printf("write fail 1 - directory.c\n\n");
+            ASSERT(false);
+        }
+    }
 
 done:
     return success;

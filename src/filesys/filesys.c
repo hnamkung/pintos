@@ -125,6 +125,18 @@ do_format (void)
     if(!inode_create (ROOT_DIR_SECTOR, 0))
         PANIC ("root directory creation failed");
 
+    struct inode * inode = inode_open(ROOT_DIR_SECTOR);
+
+    struct dir_entry e;
+    e.inode_sector = ROOT_DIR_SECTOR;
+    e.name[0] = '.'; e.name[1] = 0;
+    e.is_dir = true;
+    e.in_use = true;
+    if(!inode_write_at (inode, &e, sizeof e, inode_length(inode)) == sizeof e) {
+        printf("init fail - filesys.c 136\n\n");
+        ASSERT(false);
+    }
+
     free_map_close ();
     printf ("done.\n");
 }
