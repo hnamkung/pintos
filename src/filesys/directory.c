@@ -126,15 +126,15 @@ dir_add (struct dir *dir, const char *name, disk_sector_t inode_sector, bool is_
 
     /* Check NAME for validity. */
     if (*name == '\0' || strlen (name) > NAME_MAX) {
-        printf("file name error!!\n\n");
-        ASSERT(false);
+//        printf("file name error!!\n\n");
+//        ASSERT(false);
         goto done;
     }
 
     /* Check that NAME is not in use. */
     if (lookup (dir, name, NULL, NULL, false) || lookup (dir, name, NULL, NULL, true)) {
-        printf("name already exists!!\n\n");
-        ASSERT(false);
+//        printf("name already exists!!\n\n");
+//        ASSERT(false);
         goto done;
     }
 
