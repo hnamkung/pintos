@@ -136,6 +136,9 @@ filesys_open (char *path)
         return NULL;
     disk_sector_t sector = dir_get_sector_from_path(path);
     struct file * file = file_open(inode_open(sector));
+    if(file->inode->removed) {
+        return NULL;
+    }
     if(dir_is_dir(path)) {
         file->is_dir = true;
     }

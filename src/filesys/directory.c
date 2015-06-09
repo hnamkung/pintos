@@ -83,7 +83,7 @@ lookup (const struct dir *dir, const char *name,
  //       if(e.in_use) {
  //           printf("%s\n", e.name);
  //       }
-        if (e.is_dir == is_dir && e.in_use && !strcmp (name, e.name)) 
+        if (e.is_dir == is_dir && e.in_use && !strcmp (name, e.name))
         {
             if (ep != NULL)
                 *ep = e;
@@ -338,10 +338,6 @@ bool dir_is_valid(char* path)
 
 bool dir_is_path_exist(char* path)
 {
-    if(strlen(path) == 0) {
-        // current
-        return true;
-    }
 
     struct dir * dir;
     if(path[0] == '/') {
@@ -351,6 +347,9 @@ bool dir_is_path_exist(char* path)
     else {
         dir = dir_reopen(thread_current()->cur_dir);
     }
+
+    if(dir->inode->removed)
+        return false;
 
     if(strlen(path) == 0)
         return true;
@@ -366,9 +365,20 @@ bool dir_is_path_exist(char* path)
         if(lookup(dir, token, &e, NULL, true)) {
             dir_close(dir);
             dir = dir_open(inode_open(e.inode_sector));
+            if(dir->inode->removed) {
+                dir_close(dir);
+                return false;
+            }
         }
         else if(lookup(dir, token, &e, NULL, false)) {
             dir_close(dir);
+            struct inode * inode = inode_open(e.inode_sector);
+            if(inode->removed) {
+                inode_close(inode);
+                return false;
+            }
+            inode_close(inode);
+
             token = strtok_r(NULL, "/", &ptr);
             free(copy);
             if(token == NULL)
