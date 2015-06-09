@@ -68,6 +68,8 @@ do_format (void)
         ASSERT(false);
     }
 
+    inode_close(inode);
+
     free_map_close ();
     printf ("done.\n");
 }

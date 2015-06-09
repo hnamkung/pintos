@@ -160,7 +160,6 @@ dir_add (struct dir *dir, const char *name, disk_sector_t inode_sector, bool is_
     if(flag == 0) {
         ofs = inode_length(dir->inode);
     }
-    
 
     /* Write slot. */
     e.inode_sector = inode_sector;
@@ -191,6 +190,7 @@ dir_add (struct dir *dir, const char *name, disk_sector_t inode_sector, bool is_
             printf("write fail 1 - directory.c\n\n");
             ASSERT(false);
         }
+        inode_close(inode);
     }
     return true;
 }
@@ -306,11 +306,16 @@ bool dir_is_valid(char* path)
     strlcpy(copy, path, strlen(path)+1);
 
     token = strtok_r(copy, "/", &ptr);
+    if(token == NULL)
+        return true;
+    
     while(true) {
-        if(strlen(token) == 0 && strlen(token) > NAME_MAX) {
+        if(strlen(token) > NAME_MAX) {
             return false;
         }
         token = strtok_r(NULL, "/", &ptr);
+        if(token == NULL)
+            break;
     }
     return true;
 }
@@ -328,11 +333,12 @@ bool dir_is_path_exist(char* path)
         path = path+1;
     }
     else {
-        dir = dir_open(thread_current()->cur_dir->inode);
+        dir = dir_reopen(thread_current()->cur_dir);
     }
 
     if(strlen(path) == 0)
         return true;
+
 
     struct dir_entry e;
     char *copy = malloc(sizeof(strlen(path)+1));
@@ -348,7 +354,7 @@ bool dir_is_path_exist(char* path)
         else if(lookup(dir, token, &e, NULL, false)) {
             dir_close(dir);
             token = strtok_r(NULL, "/", &ptr);
-            if(strlen(token) == 0)
+            if(token == NULL)
                 return true;
             return false;
             
@@ -357,7 +363,7 @@ bool dir_is_path_exist(char* path)
             return false;
         }
         token = strtok_r(NULL, "/", &ptr);
-        if(strlen(token) == 0)
+        if(token == NULL)
             break;
     }
     return true;
@@ -371,7 +377,7 @@ bool dir_is_dir(char* path)
         path = path+1;
     }
     else {
-        dir = dir_open(thread_current()->cur_dir->inode);
+        dir = dir_reopen(thread_current()->cur_dir);
     }
 
     if(strlen(path) == 0)
@@ -399,7 +405,7 @@ bool dir_is_dir(char* path)
             ASSERT(false);
         }
         token = strtok_r(NULL, "/", &ptr);
-        if(strlen(token) == 0)
+        if(token == NULL)
             break;
     }
     return true;
@@ -444,7 +450,7 @@ disk_sector_t dir_get_sector_from_path(char *path)
         path = path+1;
     }
     else {
-        dir = dir_open(thread_current()->cur_dir->inode);
+        dir = dir_reopen(thread_current()->cur_dir);
     }
 
     if(strlen(path) == 0) {
@@ -477,7 +483,7 @@ disk_sector_t dir_get_sector_from_path(char *path)
             ASSERT(false);
         }
         token = strtok_r(NULL, "/", &ptr);
-        if(strlen(token) == 0)
+        if(token == NULL)
             break;
     }
     return sector;
