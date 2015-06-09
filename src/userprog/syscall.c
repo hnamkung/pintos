@@ -288,6 +288,10 @@ static void syscall_write(struct intr_frame *f)
     struct file *file = search_file(fd);
     if(file == NULL)
         return;
+    if(file->is_dir == true) {
+        f->eax = -1;
+        return;
+    }
 
     lock_acquire(&file_lock);
     f->eax = file_write(file, buffer, size);
