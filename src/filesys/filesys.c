@@ -118,6 +118,7 @@ filesys_create (char *path, off_t initial_size)
 
     if (!success && new_sector != 0) 
         free_map_release (new_sector, 1);
+    free(upper_dir_path);
 
     return success;
 }
@@ -161,19 +162,24 @@ filesys_remove (char *path)
         return false;
 
     disk_sector_t now = dir_get_sector_from_path(path);
-    disk_sector_t upper = dir_get_upper_sector_from_sector(now);
-    if(upper == -1) // when this is root dir
-        return false;
+    disk_sector_t upper;
 
 
     if(dir_is_dir(path)) {
+        upper = dir_get_upper_sector_from_sector(now);
+        if(upper == -1) // when this is root dir
+            return false;
         struct dir * now_dir = dir_open(inode_open(now));
         if(dir_count(now_dir) != 2) {
             dir_close(now_dir);
             return false;
         }
         dir_close(now_dir);
-
+    }
+    else {
+        char *upper_dir_path = malloc(sizeof(strlen(path)+1));
+        dir_set_upper_path_from_path(upper_dir_path, path);
+        upper = dir_get_sector_from_path(upper_dir_path);
     }
     struct dir * upper_dir = dir_open(inode_open(upper));
     bool suc = dir_remove(upper_dir, now);
