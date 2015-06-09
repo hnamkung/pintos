@@ -245,95 +245,8 @@ dir_readdir (struct dir *dir, char name[NAME_MAX + 1])
     return false;
 }
 
-void dir_upper_path_from_path(char* dir_upper, char* path)
-{
-    char *copy = malloc(sizeof(strlen(path)+1));
-    strlcpy(copy, path, strlen(path)+1);
-
-    char *token, *ptr, *last_path;
-
-    strlcpy(dir_upper, path, strlen(path)+1);
-
-    token = strtok_r(copy, "/", &ptr);
-    last_path = token;
-    while(token) {
-        token = strtok_r(NULL, "/", &ptr);
-        if(token != NULL)
-            last_path = token;
-    }
-
-    int dir_upper_length = strlen(path) - strlen(last_path);
-    if(dir_upper_length == 0) {
-        dir_upper[0] = 0;
-    }
-    else {
-        // -1 for last '/' str
-        dir_upper[dir_upper_length-1] = 0;
-    }
-    free(copy);
-}
-
-void dir_name_from_path(char *dir_name, char *path)
-{
-    char *copy = malloc(sizeof(strlen(path)+1));
-    strlcpy(copy, path, strlen(path)+1);
-
-    char *token, *ptr, *last_path;
-    token = strtok_r(copy, "/", &ptr);
-    last_path = token;
-    while(token) {
-        token = strtok_r(NULL, "/", &ptr);
-        if(token != NULL)
-            last_path = token;
-    }
-
-    strlcpy(dir_name, last_path, strlen(last_path)+1);
-    free(copy);
-}
-
-// from relative input path, return struct dir
-struct dir dir_get_from_path(struct dir * now_dir, char *path)
-{
-    if(strlen(path) == 0) {
-        return *now_dir;
-    }
-    char *sub_dir_name, *left;
-    sub_dir_name = strtok_r(path, "/", &left);
-
-    struct dir_entry e;
-    struct dir * sub_dir;
-
-    if(lookup(now_dir, sub_dir_name, &e, NULL, true) == false) {
-        struct dir null_dir;
-        null_dir.inode = NULL;
-        return null_dir;
-    }
-
-    sub_dir = dir_open(inode_open(e.inode_sector)); 
-
-    return dir_get_from_path(sub_dir, left);
-}
-
-bool dir_get_upper_and_name_from_path(struct dir * upper_dir, char* dir_name, char* path)
-{
-    char *upper_dir_path = malloc(strlen(path)+1);
-    
-    // get dir_name first
-    dir_name_from_path(dir_name, path);
-    
-    
-    // get upper_dir_path
-    dir_upper_path_from_path(upper_dir_path, path);
-
-    // get upper_dir using current path and upper_dir_path
-    *upper_dir = dir_get_from_path(thread_current()->cur_dir, upper_dir_path);
-    free(upper_dir_path);
-
-    if(upper_dir->inode == NULL) {
-        return false;
-    }
-    return true;
-}
+/* project 4
+ * sys call  */
 
 bool dir_mkdir(char* path)
 {
@@ -365,13 +278,98 @@ bool dir_mkdir(char* path)
 
 bool dir_chdir(char* path)
 {
-    struct dir path_dir = dir_get_from_path(thread_current()->cur_dir, path);
+    struct dir path_dir = dir_get_from_path(path);
     if(path_dir.inode == NULL)
         return false;
     thread_current()->cur_dir = dir_open(path_dir.inode);
     return true;
 }
 
+/* project 4
+ * path handling */
 
 
+struct dir dir_get_from_path_recur(struct dir * now_dir, char *path)
+{
+    if(strlen(path) == 1) {
+        return *now_dir;
+    }
+    char *sub_dir_name, *left;
+    sub_dir_name = strtok_r(path, "/", &left);
 
+    struct dir_entry e;
+    struct dir * sub_dir;
+
+    if(lookup(now_dir, sub_dir_name, &e, NULL, true) == false) {
+        struct dir null_dir;
+        null_dir.inode = NULL;
+        return null_dir;
+    }
+
+    sub_dir = dir_open(inode_open(e.inode_sector)); 
+
+    return dir_get_from_path_recur(sub_dir, left);
+}
+
+
+// input : relative path
+// output : struct dir dir
+struct dir dir_get_from_path(char *path)
+{
+    if(strlen(path) == 0) {
+        return *(thread_current()->cur_dir);
+    }
+    if(path[0] == '/') {
+        return dir_get_from_path_recur(dir_open_root(), path+1);
+    }
+    else {
+        return dir_get_from_path_recur(thread_current()->cur_dir, path);
+    }
+}
+
+// input : relative path
+// output : struct dir * upper_dir
+//        : dir_name
+
+bool dir_get_upper_and_name_from_path(struct dir * upper_dir, char* dir_name, char* path)
+{
+    // get dir_name first
+    dir_name_from_path(dir_name, path);
+
+    if(strlen(dir_name) == 0)
+        return false;
+    
+    // get upper_dir_path
+    char *upper_dir_path = malloc(strlen(path)+1);
+    strlcpy(upper_dir_path, path, strlen(path)+1);
+    int length = strlen(path) - strlen(dir_name);
+    upper_dir_path[length] = 0;
+
+    // get upper_dir using current path and upper_dir_path
+    *upper_dir = dir_get_from_path(upper_dir_path);
+    free(upper_dir_path);
+
+    if(upper_dir->inode == NULL) {
+        return false;
+    }
+    return true;
+}
+
+// private function
+void dir_name_from_path(char *dir_name, char *path)
+{
+    char *copy = malloc(sizeof(strlen(path)+1));
+    strlcpy(copy, path, strlen(path)+1);
+
+    char *token, *ptr, *last_path;
+    token = strtok_r(copy, "/", &ptr);
+    last_path = token;
+    while(token) {
+        token = strtok_r(NULL, "/", &ptr);
+        if(token != NULL)
+            last_path = token;
+    }
+
+    strlcpy(dir_name, last_path, strlen(last_path)+1);
+    free(copy);
+}

@@ -50,10 +50,10 @@ bool dir_mkdir(char* path);
 bool dir_chdir(char* path);
 
 /* helper function */
-struct dir dir_get_from_path(struct dir *, char *);
-void dir_name_from_path(char*, char*);
-void dir_upper_path_from_path(char*, char*);
+struct dir dir_get_from_path_recur(struct dir * now_dir, char *path);
+struct dir dir_get_from_path(char *path);
 bool dir_get_upper_and_name_from_path(struct dir*, char*, char*);
+void dir_name_from_path(char*, char*);
 
 
 
