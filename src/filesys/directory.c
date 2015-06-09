@@ -244,8 +244,10 @@ bool dir_mkdir(char* path)
     dir_set_dir_name_from_path(dir_name, path);
     dir_set_upper_path_from_path(upper_dir_path, path);
 
-    if(!dir_is_path_exist(upper_dir_path) || !dir_is_dir(upper_dir_path))
+    if(!dir_is_path_exist(upper_dir_path) || !dir_is_dir(upper_dir_path)) {
+        free(upper_dir_path);
         return false;
+    }
 
     upper_dir_sector = dir_get_sector_from_path(upper_dir_path);
 
@@ -267,6 +269,7 @@ bool dir_mkdir(char* path)
     if (!success && new_sector != 0) 
         free_map_release (new_sector, 1);
 
+    free(upper_dir_path);
     return success;
 }
 
@@ -315,17 +318,21 @@ bool dir_is_valid(char* path)
     strlcpy(copy, path, strlen(path)+1);
 
     token = strtok_r(copy, "/", &ptr);
-    if(token == NULL)
+    if(token == NULL) {
+        free(copy);
         return true;
+    }
     
     while(true) {
         if(strlen(token) > NAME_MAX) {
+            free(copy);
             return false;
         }
         token = strtok_r(NULL, "/", &ptr);
         if(token == NULL)
             break;
     }
+    free(copy);
     return true;
 }
 
@@ -363,18 +370,21 @@ bool dir_is_path_exist(char* path)
         else if(lookup(dir, token, &e, NULL, false)) {
             dir_close(dir);
             token = strtok_r(NULL, "/", &ptr);
+            free(copy);
             if(token == NULL)
                 return true;
             return false;
             
         } else {
             dir_close(dir);
+            free(copy);
             return false;
         }
         token = strtok_r(NULL, "/", &ptr);
         if(token == NULL)
             break;
     }
+    free(copy);
     return true;
 }
 
@@ -407,6 +417,7 @@ bool dir_is_dir(char* path)
         else if(lookup(dir, token, &e, NULL, false)) {
             dir_close(dir);
             token = strtok_r(NULL, "/", &ptr);
+            free(copy);
             return false;
             
         } else {
@@ -417,8 +428,8 @@ bool dir_is_dir(char* path)
         if(token == NULL)
             break;
     }
+    free(copy);
     return true;
-
 }
 
 void dir_set_dir_name_from_path(char* dir_name, char* path)
@@ -495,6 +506,7 @@ disk_sector_t dir_get_sector_from_path(char *path)
         if(token == NULL)
             break;
     }
+    free(copy);
     return sector;
 }
 
