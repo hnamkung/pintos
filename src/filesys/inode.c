@@ -104,7 +104,7 @@ inode_create (disk_sector_t sector, off_t length)
     }
     disk_inode->double_elem = NOT_ALLOCATED;
 
-    extend_file_if_necessary(disk_inode, length);
+    extend_file_if_necessary(sector, disk_inode, length);
 
     cache_write(sector, disk_inode);
     free (disk_inode);
@@ -146,6 +146,19 @@ inode_open (disk_sector_t sector)
     inode->removed = false;
     cache_read (inode->sector, &inode->data);
     return inode;
+}
+void inode_done(void)
+{
+    struct list_elem *e;
+    struct inode *inode;
+    for (e = list_begin (&open_inodes); e != list_end (&open_inodes);
+            e = list_next (e)) 
+    {
+
+        inode = list_entry (e, struct inode, elem);
+        cache_write(inode->sector, &inode->data);
+    }
+    
 }
 
 /* Reopens and returns INODE. */
@@ -273,8 +286,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size, off_t offs
     if(size == 0)
         return 0;
 
-    extend_file_if_necessary(&inode->data, offset + size);
-    
+    extend_file_if_necessary(inode->sector, &inode->data, offset + size);
 
     while (size > 0) {
         int sector_ofs = offset % DISK_SECTOR_SIZE;
@@ -390,13 +402,15 @@ disk_sector_t get_sector(struct inode_disk *disk_inode, off_t ith_sector)
 }
 
 
-void extend_file_if_necessary(struct inode_disk *disk_inode, off_t length)
+void extend_file_if_necessary(disk_sector_t sec_no, struct inode_disk *disk_inode, off_t length)
 {
     off_t origin_sectors = disk_inode->length == 0 ? -1 : (disk_inode->length-1) / DISK_SECTOR_SIZE;
     off_t new_sectors = length == 0 ? -1 : (length-1) / DISK_SECTOR_SIZE;
     
-    if(disk_inode->length < length)
+    if(disk_inode->length < length) {
         disk_inode->length = length;
+        cache_write(sec_no, disk_inode);
+    }
 
     if(origin_sectors >= new_sectors) {
         return;
@@ -419,6 +433,7 @@ void extend_file_if_necessary(struct inode_disk *disk_inode, off_t length)
         sectors--;
         disk_inode->direct_list[i] = alloc_sector();
         origin_sectors++;
+        cache_write(sec_no, disk_inode);
     }
 
     origin_sectors -= DIRECT_COUNT;

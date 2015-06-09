@@ -41,6 +41,7 @@ filesys_init (bool format)
     void
 filesys_done (void) 
 {
+    inode_done();
     cache_close();
     free_map_close ();
 }

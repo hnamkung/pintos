@@ -15,6 +15,7 @@ struct double_disk;
 void inode_init (void);
 bool inode_create (disk_sector_t, off_t);
 struct inode *inode_open (disk_sector_t);
+void inode_done(void);
 struct inode *inode_reopen (struct inode *);
 disk_sector_t inode_get_inumber (const struct inode *);
 void inode_close (struct inode *);
@@ -26,7 +27,7 @@ void inode_allow_write (struct inode *);
 off_t inode_length (const struct inode *);
 
 disk_sector_t get_sector(struct inode_disk *disk_inode, off_t ith_sector);
-void extend_file_if_necessary(struct inode_disk *disk_inode, off_t length);
+void extend_file_if_necessary(disk_sector_t sec_no, struct inode_disk *disk_inode, off_t length);
 
 struct single_disk * single_read_or_create(disk_sector_t list[], int j, uint8_t *bounce);
 void single_writeback_or_alloc(disk_sector_t list[], int j, struct single_disk * disk_single);
@@ -36,5 +37,6 @@ void double_writeback_or_alloc(disk_sector_t double_elem, struct double_disk * d
 disk_sector_t alloc_sector(void);
 disk_sector_t alloc_single(struct single_disk *disk_single);
 disk_sector_t alloc_double(struct double_disk *disk_double);
+    
 
 #endif /* filesys/inode.h */
