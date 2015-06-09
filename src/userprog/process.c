@@ -176,7 +176,7 @@ execute_thread (void *fn_copy)
     mmap_table_init(&t->mmap_table);
 
     t->parent = parent;
-    t->cur_dir = parent->cur_dir;
+    t->cur_dir = dir_reopen(parent->cur_dir);
     list_push_back(&parent->child_list, &t->child_elem);
 
     /* Initialize interrupt frame and load executable. */

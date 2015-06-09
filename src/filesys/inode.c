@@ -1,5 +1,4 @@
 #include "filesys/inode.h"
-#include <list.h>
 #include <debug.h>
 #include <round.h>
 #include <string.h>
@@ -11,37 +10,8 @@
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
 
-#define DIRECT_COUNT 10
-#define SINGLE_INDIRECT_COUNT 10
-#define UNUSED (128 - 1 - DIRECT_COUNT - SINGLE_INDIRECT_COUNT - 2)
-#define INDIRECT_COUNT 128
-#define NOT_ALLOCATED 9999999
-
 static char zeros[DISK_SECTOR_SIZE];
 
-/* On-disk inode.
-   Must be exactly DISK_SECTOR_SIZE bytes long. */
-struct inode_disk
-{
-    off_t length;
-
-    disk_sector_t direct_list[DIRECT_COUNT];
-    disk_sector_t single_list[SINGLE_INDIRECT_COUNT];
-    disk_sector_t double_elem;
-
-    unsigned magic;                     /* Magic number. */
-    uint32_t unused[UNUSED];               /* Not used. */
-};
-
-struct single_disk
-{
-    disk_sector_t direct_list[INDIRECT_COUNT];
-};
-
-struct double_disk
-{
-    disk_sector_t single_list[INDIRECT_COUNT];
-};
 
 /* Returns the number of sectors to allocate for an inode SIZE
    bytes long. */
@@ -50,18 +20,6 @@ bytes_to_sectors (off_t size)
 {
     return DIV_ROUND_UP (size, DISK_SECTOR_SIZE);
 }
-
-/* In-memory inode. */
-struct inode 
-{
-    struct list_elem elem;              /* Element in inode list. */
-    disk_sector_t sector;               /* Sector number of disk location. */
-    int open_cnt;                       /* Number of openers. */
-    bool removed;                       /* True if deleted, false otherwise. */
-    int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
-    struct inode_disk data;             /* Inode content. */
-};
-
 
 /* List of open inodes, so that opening a single inode twice
    returns the same `struct inode'. */
@@ -193,10 +151,13 @@ inode_close (struct inode *inode)
         /* Remove from inode list and release lock. */
         list_remove (&inode->elem);
 
+        //cache_write(inode,
+
+
         /* Deallocate blocks if removed. */
         if (inode->removed) 
         {
-            free_map_release (inode->sector, 1);
+            //free_map_release (inode->sector, 1);
             // close later
             
             //free_map_release (inode->data.start,

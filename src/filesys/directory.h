@@ -32,7 +32,6 @@ struct dir_entry
 
 
 /* Opening and closing directories. */
-bool dir_create (disk_sector_t sector, size_t entry_cnt);
 struct dir *dir_open (struct inode *);
 struct dir *dir_open_root (void);
 struct dir *dir_reopen (struct dir *);
@@ -41,8 +40,9 @@ struct inode *dir_get_inode (struct dir *);
 
 /* Reading and writing. */
 bool dir_lookup (const struct dir *dir, const char *name, struct inode **inode, bool is_dir);
+int dir_count (const struct dir *dir);
 bool dir_add (struct dir *dir, const char *name, disk_sector_t inode_sector, bool is_dir);
-bool dir_remove (struct dir *, const char *name);
+bool dir_remove (struct dir *, disk_sector_t sec);
 bool dir_readdir (struct dir *, char name[NAME_MAX + 1]);
 
 /* project 4 syscall */
@@ -50,10 +50,19 @@ bool dir_mkdir(char* path);
 bool dir_chdir(char* path);
 
 /* helper function */
-struct dir dir_get_from_path_recur(struct dir * now_dir, char *path);
-struct dir dir_get_from_path(char *path);
-bool dir_get_upper_and_name_from_path(struct dir*, char*, char*);
-void dir_name_from_path(char*, char*);
+// single component is zero or more than NAME_MAX
+bool dir_is_valid(char*);
+// dir exists either path or file
+bool dir_is_path_exist(char*);
+// dir is dir or file
+bool dir_is_dir(char*);
+void dir_set_dir_name_from_path(char*, char*);
+void dir_set_upper_path_from_path(char*, char*);
+disk_sector_t dir_get_sector_from_path(char *);
+
+disk_sector_t dir_get_upper_sector_from_sector(disk_sector_t sec);
+
+
 
 
 

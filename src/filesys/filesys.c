@@ -45,76 +45,7 @@ filesys_done (void)
     cache_close();
     free_map_close ();
 }
-
-/* Creates a file named NAME with the given INITIAL_SIZE.
-   Returns true if successful, false otherwise.
-   Fails if a file named NAME already exists,
-   or if internal memory allocation fails. */
-    bool
-filesys_create (char *path, off_t initial_size) 
-{
-    disk_sector_t inode_sector = 0;
 
-    char dir_name[NAME_MAX+1];
-    struct dir upper_dir;
-
-    bool success = true;
-    if(!dir_get_upper_and_name_from_path(&upper_dir, dir_name, path)) {
-        success = false;
-    }
-
-    if(success && !free_map_allocate (1, &inode_sector))
-        success = false;
-
-    if(success && !inode_create (inode_sector, initial_size))
-        success = false;
-
-    if(success && !dir_add (&upper_dir, dir_name, inode_sector, false))
-        success = false;
-
-    if (!success && inode_sector != 0) 
-        free_map_release (inode_sector, 1);
-    //dir_close (dir);
-
-    return success;
-}
-
-/* Opens the file with the given NAME.
-   Returns the new file if successful or a null pointer
-   otherwise.
-   Fails if no file named NAME exists,
-   or if an internal memory allocation fails. */
-    struct file *
-filesys_open (char *name)
-{
-    char dir_name[NAME_MAX+1];
-    struct dir upper_dir;
-
-    struct inode *inode = NULL;
-
-    if(dir_get_upper_and_name_from_path(&upper_dir, dir_name, name)) {
-        dir_lookup (&upper_dir, dir_name, &inode, false);
-    }
-
-    //dir_close (dir);
-
-    return file_open (inode);
-}
-
-/* Deletes the file named NAME.
-   Returns true if successful, false on failure.
-   Fails if no file named NAME exists,
-   or if an internal memory allocation fails. */
-    bool
-filesys_remove (char *name) 
-{
-    struct dir *dir = dir_open_root ();
-    bool success = dir != NULL && dir_remove (dir, name);
-    dir_close (dir); 
-
-    return success;
-}
-
 /* Formats the file system. */
     static void
 do_format (void)
@@ -139,4 +70,102 @@ do_format (void)
 
     free_map_close ();
     printf ("done.\n");
+}
+
+/* Creates a file named NAME with the given INITIAL_SIZE.
+   Returns true if successful, false otherwise.
+   Fails if a file named NAME already exists,
+   or if internal memory allocation fails. */
+    bool
+filesys_create (char *path, off_t initial_size) 
+{
+    disk_sector_t new_sector = 0;
+    disk_sector_t upper_dir_sector = 0;
+
+
+    if(!dir_is_valid(path))
+        return false;
+
+    char dir_name[NAME_MAX+1];
+    char *upper_dir_path = malloc(sizeof(strlen(path)+1));
+
+    dir_set_dir_name_from_path(dir_name, path);
+    dir_set_upper_path_from_path(upper_dir_path, path);
+
+    if(!dir_is_path_exist(upper_dir_path) || !dir_is_dir(upper_dir_path))
+        return false;
+
+    upper_dir_sector = dir_get_sector_from_path(upper_dir_path);
+
+
+    bool success = true;
+
+    if(success && !free_map_allocate (1, &new_sector))
+        success = false;
+
+    if(success && !inode_create (new_sector, initial_size))
+        success = false;
+
+    struct dir * dir;
+    dir = dir_open(inode_open(upper_dir_sector));
+    success = success & dir_add(dir, dir_name, new_sector, false);
+    dir_close(dir);
+
+
+    if (!success && new_sector != 0) 
+        free_map_release (new_sector, 1);
+
+    return success;
+}
+
+/* Opens the file with the given NAME.
+   Returns the new file if successful or a null pointer
+   otherwise.
+   Fails if no file named NAME exists,
+   or if an internal memory allocation fails. */
+    struct file *
+filesys_open (char *path)
+{
+    if(!dir_is_valid(path) || !dir_is_path_exist(path))
+        return NULL;
+    disk_sector_t sector = dir_get_sector_from_path(path);
+    struct file * file = file_open(inode_open(sector));
+    if(dir_is_dir(path)) {
+        file->is_dir = true;
+    }
+    else 
+        file->is_dir = false;
+
+    return file;
+}
+
+/* Deletes the file named NAME.
+   Returns true if successful, false on failure.
+   Fails if no file named NAME exists,
+   or if an internal memory allocation fails. */
+    bool
+filesys_remove (char *path) 
+{
+    if(!dir_is_valid(path) || !dir_is_path_exist(path))
+        return false;
+
+    disk_sector_t now = dir_get_sector_from_path(path);
+    disk_sector_t upper = dir_get_upper_sector_from_sector(now);
+    if(upper == -1) // when this is root dir
+        return false;
+
+
+    if(dir_is_dir(path)) {
+        struct dir * now_dir = dir_open(inode_open(now));
+        if(dir_count(now_dir) != 2) {
+            dir_close(now_dir);
+            return false;
+        }
+        dir_close(now_dir);
+
+    }
+    struct dir * upper_dir = dir_open(inode_open(upper));
+    bool suc = dir_remove(upper_dir, now);
+    dir_close(upper_dir);
+    return suc;
 }
