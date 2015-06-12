@@ -96,29 +96,35 @@ filesys_create (char *path, off_t initial_size)
     dir_set_dir_name_from_path(dir_name, path);
     dir_set_upper_path_from_path(upper_dir_path, path);
 
-    if(!dir_is_path_exist(upper_dir_path) || !dir_is_dir(upper_dir_path))
+    if(!dir_is_path_exist(upper_dir_path) || !dir_is_dir(upper_dir_path)) {
+        free(upper_dir_path);
         return false;
+    }
 
     upper_dir_sector = dir_get_sector_from_path(upper_dir_path);
+    free(upper_dir_path);
 
 
-    bool success = true;
 
-    if(success && !free_map_allocate (1, &new_sector))
-        success = false;
+    if(!free_map_allocate (1, &new_sector)) {
+        return false;
+    }
 
-    if(success && !inode_create (new_sector, initial_size))
-        success = false;
+    if(!inode_create (new_sector, initial_size)) {
+        free_map_release (new_sector, 1);
+        return false;
+    }
 
     struct dir * dir;
+    bool success;
     dir = dir_open(inode_open(upper_dir_sector));
-    success = success & dir_add(dir, dir_name, new_sector, false);
+    success = dir_add(dir, dir_name, new_sector, false);
     dir_close(dir);
 
-
-    if (!success && new_sector != 0) 
+    if(success == false) {
         free_map_release (new_sector, 1);
-    free(upper_dir_path);
+        return false;
+    }
 
     return success;
 }

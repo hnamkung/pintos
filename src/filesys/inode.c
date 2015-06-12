@@ -151,7 +151,7 @@ inode_close (struct inode *inode)
         /* Remove from inode list and release lock. */
         list_remove (&inode->elem);
 
-        //cache_write(inode,
+        cache_write(inode->sector, &inode->data); 
 
 
         /* Deallocate blocks if removed. */

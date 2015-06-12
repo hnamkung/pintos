@@ -167,17 +167,22 @@ dir_add (struct dir *dir, const char *name, disk_sector_t inode_sector, bool is_
         ofs = inode_length(dir->inode);
     }
 
+    struct inode * inode = inode_open(inode_sector);
+    if(inode == NULL) {
+        return false;
+    }
     /* Write slot. */
     e.inode_sector = inode_sector;
     strlcpy (e.name, name, sizeof e.name);
     e.is_dir = is_dir;
     e.in_use = true;
     if(inode_write_at (dir->inode, &e, sizeof e, ofs) != sizeof e) {
+        inode_close(inode);
+
         return false;
     }
 
     if(is_dir) {
-        struct inode * inode = inode_open(inode_sector);
 
         e.inode_sector = inode_sector;
         e.name[0] = '.'; e.name[1] = 0;
@@ -196,8 +201,8 @@ dir_add (struct dir *dir, const char *name, disk_sector_t inode_sector, bool is_
             printf("write fail 1 - directory.c\n\n");
             ASSERT(false);
         }
-        inode_close(inode);
     }
+    inode_close(inode);
     return true;
 }
 
@@ -250,27 +255,30 @@ bool dir_mkdir(char* path)
     }
 
     upper_dir_sector = dir_get_sector_from_path(upper_dir_path);
+    free(upper_dir_path);
 
 
-    bool success = true;
 
-    if(success && !free_map_allocate (1, &new_sector))
-        success = false;
+    if(!free_map_allocate (1, &new_sector)) {
+        return false;
+    }
 
-    if(success && !inode_create (new_sector, 0))
-        success = false;
+    if(!inode_create (new_sector, 0)) {
+        free_map_release(new_sector, 1);
+        return false;
+    }
 
     struct dir * dir;
+    bool success;
     dir = dir_open(inode_open(upper_dir_sector));
-    success = success & dir_add(dir, dir_name, new_sector, true);
+    success = dir_add(dir, dir_name, new_sector, true);
     dir_close(dir);
 
-
-    if (!success && new_sector != 0) 
+    if(success == false) {
         free_map_release (new_sector, 1);
-
-    free(upper_dir_path);
-    return success;
+        return false;
+    }
+    return true;
 }
 
 bool dir_chdir(char* path)
@@ -367,6 +375,7 @@ bool dir_is_path_exist(char* path)
             dir = dir_open(inode_open(e.inode_sector));
             if(dir->inode->removed) {
                 dir_close(dir);
+                free(copy);
                 return false;
             }
         }
@@ -375,6 +384,7 @@ bool dir_is_path_exist(char* path)
             struct inode * inode = inode_open(e.inode_sector);
             if(inode->removed) {
                 inode_close(inode);
+                free(copy);
                 return false;
             }
             inode_close(inode);
@@ -391,8 +401,10 @@ bool dir_is_path_exist(char* path)
             return false;
         }
         token = strtok_r(NULL, "/", &ptr);
-        if(token == NULL)
+        if(token == NULL) {
+            dir_close(dir);
             break;
+        }
     }
     free(copy);
     return true;
@@ -435,8 +447,10 @@ bool dir_is_dir(char* path)
             ASSERT(false);
         }
         token = strtok_r(NULL, "/", &ptr);
-        if(token == NULL)
+        if(token == NULL) {
+            dir_close(dir);
             break;
+        }
     }
     free(copy);
     return true;
@@ -513,8 +527,10 @@ disk_sector_t dir_get_sector_from_path(char *path)
             ASSERT(false);
         }
         token = strtok_r(NULL, "/", &ptr);
-        if(token == NULL)
+        if(token == NULL) {
+            dir_close(dir);
             break;
+        }
     }
     free(copy);
     return sector;
